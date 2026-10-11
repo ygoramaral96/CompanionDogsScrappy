@@ -5,5 +5,11 @@
     "IGUI_AnimalType_scrappypup": "Scrappy (puppy)",
     "IGUI_PD_Breed_scrappy": "Scrappy",
     "IGUI_Scrappy_Looted": "Scrappy took: %1",
+    "IGUI_Scrappy_Recharge": "Recharge Scrappy (charge %1)",
+    "IGUI_Scrappy_NoCharger": "Needs a battery or a car battery with charge",
+    "IGUI_Scrappy_Recharged": "Scrappy charged: %1",
+    "IGUI_Scrappy_NoFood": "Scrappy does not eat - recharge it with a battery",
+    "IGUI_Scrappy_Shutdown": "Scrappy shut down: out of charge",
+    "IGUI_Scrappy_TooFar": "Get closer to Scrappy",
     "IGUI_PD_BreedDesc_scrappy": "A mechanical dog built from salvage. It fights like an ordinary companion, carries more in its saddlebag than any other breed, and plucks jewelry off the zombies you drop. Working alongside it sharpens your Electricity and Metal Welding. It cannot be bred."
 }

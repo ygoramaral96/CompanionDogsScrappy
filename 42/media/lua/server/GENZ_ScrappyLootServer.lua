@@ -14,8 +14,9 @@
 -- read, never copied: a jewel added there is collected here with no change.
 if isClient() and not isServer() then return end
 
-local NET = "GENZ_Scrappy"
-local BREED_KEY = "scrappy"
+require "GENZ_ScrappyShared"
+local S = GENZ_Scrappy
+
 local LOOT_RADIUS = 8   -- tiles from the corpse to the dog, same floor
 
 local function sameFloor(a, b)
@@ -28,7 +29,7 @@ local function closestScrappy(x, y, z)
     local dogs = CD.regCompanions()
     for i = 1, #dogs do
         local dog = dogs[i]
-        if dog:isExistInTheWorld() and not dog:isDead() and CD.getBreed(dog) == BREED_KEY
+        if dog:isExistInTheWorld() and not dog:isDead() and S.isScrappy(dog) and not S.isOff(dog)
                 and sameFloor(dog:getZ(), z) then
             local dx, dy = dog:getX() - x, dog:getY() - y
             local dist = dx * dx + dy * dy
@@ -38,18 +39,6 @@ local function closestScrappy(x, y, z)
         end
     end
     return best
-end
-
--- Same shape as GENZ_KeysServer.reply: no network in single player, so call the client directly.
-local function notifyOwner(owner, fullTypes)
-    local args = { items = fullTypes }
-    if isServer() then
-        sendServerCommand(owner, NET, "looted", args)
-    elseif GENZ_ScrappyLootClient and GENZ_ScrappyLootClient.onLooted then
-        GENZ_ScrappyLootClient.onLooted(args)
-    else
-        print("[GENZ_Scrappy] loot notice has no destination in single player (client file not loaded?)")
-    end
 end
 
 local function moveJewelsToBag(zombie, jewels)
@@ -79,7 +68,7 @@ local function moveJewelsToBag(zombie, jewels)
     if #taken == 0 then return end
     print("[GENZ_Scrappy] " .. tostring(owner:getUsername()) .. "'s Scrappy looted " .. #taken
           .. " jewel(s): " .. table.concat(taken, ", "))
-    notifyOwner(owner, taken)
+    S.toOwner(owner, "looted", { items = taken })
 end
 
 Events.OnGameBoot.Add(function()

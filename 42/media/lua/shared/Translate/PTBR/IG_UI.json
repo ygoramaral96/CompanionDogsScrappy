@@ -5,5 +5,11 @@
     "IGUI_AnimalType_scrappypup": "Scrappy (filhote)",
     "IGUI_PD_Breed_scrappy": "Scrappy",
     "IGUI_Scrappy_Looted": "Scrappy pegou: %1",
+    "IGUI_Scrappy_Recharge": "Recarregar Scrappy (carga %1)",
+    "IGUI_Scrappy_NoCharger": "Precisa de pilha ou bateria de carro com carga",
+    "IGUI_Scrappy_Recharged": "Scrappy carregado: %1",
+    "IGUI_Scrappy_NoFood": "Scrappy não come - recarregue com pilha ou bateria",
+    "IGUI_Scrappy_Shutdown": "Scrappy desligou: sem carga",
+    "IGUI_Scrappy_TooFar": "Chegue mais perto do Scrappy",
     "IGUI_PD_BreedDesc_scrappy": "Um cão mecânico feito de sucata. Briga como um companheiro comum, leva mais coisa no alforje que qualquer outra raça e arranca as joias dos zumbis que você derruba. Trabalhar ao lado dele afia a sua Eletricidade e a sua Soldagem. Não se reproduz."
 }
