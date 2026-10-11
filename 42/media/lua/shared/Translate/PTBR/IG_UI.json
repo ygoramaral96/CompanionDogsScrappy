@@ -11,5 +11,12 @@
     "IGUI_Scrappy_NoFood": "Scrappy não come - recarregue com pilha ou bateria",
     "IGUI_Scrappy_Shutdown": "Scrappy desligou: sem carga",
     "IGUI_Scrappy_TooFar": "Chegue mais perto do Scrappy",
+    "IGUI_Scrappy_Maintain": "Manutenção do Scrappy (condição %1)",
+    "IGUI_Scrappy_NoScrewdriver": "Precisa de chave de fenda",
+    "IGUI_Scrappy_NoParts": "Precisa de sucata eletrônica ou sucata de metal",
+    "IGUI_Scrappy_Repaired": "Scrappy consertado: %1",
+    "IGUI_Scrappy_FullCondition": "Scrappy já está em perfeito estado",
+    "IGUI_Scrappy_Degraded": "Scrappy desgastado: parou de coletar joias e de ajudar no XP até a manutenção",
+    "IGUI_Scrappy_Broken": "Scrappy quebrou: precisa de manutenção",
     "IGUI_PD_BreedDesc_scrappy": "Um cão mecânico feito de sucata. Briga como um companheiro comum, leva mais coisa no alforje que qualquer outra raça e arranca as joias dos zumbis que você derruba. Trabalhar ao lado dele afia a sua Eletricidade e a sua Soldagem. Não se reproduz."
 }

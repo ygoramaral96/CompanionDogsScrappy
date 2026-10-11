@@ -24,7 +24,7 @@ local function ownersScrappyNearby(player)
     for i = 1, #dogs do
         local dog = dogs[i]
         if dog:isExistInTheWorld() and not dog:isDead() and S.isScrappy(dog) and CD.isOwnedBy(dog, player)
-                and not S.isOff(dog) and not CD.isDisloyal(dog) and CD.dist2D(dog, player) <= radius then
+                and S.isWorking(dog) and not CD.isDisloyal(dog) and CD.dist2D(dog, player) <= radius then
             return dog
         end
     end

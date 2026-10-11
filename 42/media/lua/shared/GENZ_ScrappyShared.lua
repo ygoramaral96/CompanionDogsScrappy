@@ -45,6 +45,35 @@ function S.isOff(animal)
     return CompanionDogs.data(animal).scrappyOff == true
 end
 
+-- WEAR: condition 1 = new, 0 = broken, kept in the dog's CompanionDogs data (survives being picked up,
+-- tested in game 10/10). A Scrappy that never wore down has no value yet: it is new.
+S.DEGRADED_BELOW = 0.5   -- below this: no jewel loot, no XP aura; at 0 it breaks and stays put
+-- Parts by item TYPE (Base module). gain = condition restored, xp = perk XP given to the mechanic.
+S.REPAIRS = {
+    ElectronicsScrap = { gain = 0.25, perk = "Electricity", xp = 5 },
+    ScrapMetal       = { gain = 0.10, perk = "MetalWelding", xp = 5 },
+}
+S.REPAIR_ORDER = { "ElectronicsScrap", "ScrapMetal" }
+
+function S.condition(animal)
+    local value = CompanionDogs.data(animal).scrappyCondition
+    if value == nil then return 1 end
+    return value
+end
+
+function S.isBroken(animal)
+    return S.condition(animal) <= 0
+end
+
+-- Switched on and not worn below the threshold: the jewel loot and the XP aura only run when this is true.
+function S.isWorking(animal)
+    return not S.isOff(animal) and S.condition(animal) >= S.DEGRADED_BELOW
+end
+
+function S.toolNotBroken(item)
+    return not item:isBroken()
+end
+
 -- Server -> owner. sendServerCommand only acts when GameServer.server (decompiled 42.21), so in single
 -- player the client handler is called directly (same shape as GENZ_KeysServer.reply).
 function S.toOwner(owner, command, args)

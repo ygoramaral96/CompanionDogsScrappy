@@ -29,7 +29,7 @@ local function closestScrappy(x, y, z)
     local dogs = CD.regCompanions()
     for i = 1, #dogs do
         local dog = dogs[i]
-        if dog:isExistInTheWorld() and not dog:isDead() and S.isScrappy(dog) and not S.isOff(dog)
+        if dog:isExistInTheWorld() and not dog:isDead() and S.isScrappy(dog) and S.isWorking(dog)
                 and sameFloor(dog:getZ(), z) then
             local dx, dy = dog:getX() - x, dog:getY() - y
             local dist = dx * dx + dy * dy

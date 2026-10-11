@@ -118,7 +118,9 @@ local function recharge(player, args)
     local d = CD.data(dog)
     if d.scrappyOff then
         d.scrappyOff = nil
-        CD.setState(dog, CD.STATE_FOLLOW)
+        if not S.isBroken(dog) then   -- charged but broken: still needs maintenance before it moves
+            CD.setState(dog, CD.STATE_FOLLOW)
+        end
     end
     CD.transmit(dog)
     local pct = math.floor(S.chargeFraction(dog) * 100 + 0.5)
