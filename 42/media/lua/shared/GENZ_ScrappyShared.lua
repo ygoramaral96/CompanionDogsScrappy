@@ -47,7 +47,7 @@ end
 
 -- WEAR: condition 1 = new, 0 = broken, kept in the dog's CompanionDogs data (survives being picked up,
 -- tested in game 10/10). A Scrappy that never wore down has no value yet: it is new.
-S.DEGRADED_BELOW = 0.5   -- below this: no jewel loot, no XP aura; at 0 it breaks and stays put
+S.DEGRADED_BELOW = 0.1   -- below this: no jewel loot, no XP aura; at 0 it breaks and stays put
 -- Parts by item TYPE (Base module). gain = condition restored, xp = perk XP given to the mechanic.
 S.REPAIRS = {
     ElectronicsScrap = { gain = 0.25, perk = "Electricity", xp = 5 },
