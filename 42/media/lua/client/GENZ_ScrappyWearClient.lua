@@ -1,5 +1,6 @@
--- Scrappy maintenance, client side (card #246): "Maintenance" on the dog's context menu, one entry per
--- part type the player carries (needs a screwdriver that is not broken), and the owner's notices.
+-- Scrappy maintenance, client side (card #246): "Maintenance" on the dog's context menu. Each entry walks
+-- next to the dog and queues GENZ_ScrappyMaintainAction (a timed action like the vanilla generator repair):
+-- one repair entry per part type carried, plus "Calibrate circuits" (Electricity training, a few per day).
 require "GENZ_ScrappyShared"
 local S = GENZ_Scrappy
 
@@ -7,8 +8,9 @@ local function percent(fraction)
     return tostring(math.floor(fraction * 100 + 0.5)) .. "%"
 end
 
-local function onRepair(animal, playerObj, partType)
-    CompanionDogs.request("scrappyRepair", animal, { part = partType }, playerObj)
+local function onMaintain(animal, playerObj, mode)
+    luautils.walkAdj(playerObj, animal:getSquare())
+    ISTimedActionQueue.add(GENZ_ScrappyMaintainAction:new(playerObj, animal, mode))
 end
 
 local function disable(option, tipKey)
@@ -18,27 +20,41 @@ local function disable(option, tipKey)
     option.toolTip = tip
 end
 
+local function addRepairEntries(sub, playerObj, animal)
+    for _, partType in ipairs(S.REPAIR_ORDER) do
+        if playerObj:getInventory():containsTypeRecurse(partType) then
+            local part = S.REPAIRS[partType]
+            local label = getText("IGUI_Scrappy_RepairWith", getItemNameFromFullType("Base." .. partType),
+                                  percent(S.repairGain(playerObj, partType)), part.xp)
+            local option = sub:addOption(label, animal, onMaintain, playerObj, partType)
+            if S.condition(animal) >= 1 then
+                disable(option, "IGUI_Scrappy_FullCondition")
+            end
+        end
+    end
+end
+
+local function addCalibrateEntry(sub, playerObj, animal)
+    local left = S.calibrationsLeft(animal)
+    local option = sub:addOption(getText("IGUI_Scrappy_Calibrate", left, S.CALIBRATION.xp), animal, onMaintain,
+                                 playerObj, S.CALIBRATE)
+    if left <= 0 then
+        disable(option, "IGUI_Scrappy_NoCalibrations")
+    elseif not playerObj:getInventory():containsTypeRecurse(S.CALIBRATION.part) then
+        disable(option, "IGUI_Scrappy_NoParts")
+    end
+end
+
 local function addMaintenanceEntry(context, playerObj, animal)
     local header = context:addOption(getText("IGUI_Scrappy_Maintain", percent(S.condition(animal))), nil, nil)
-    local inv = playerObj:getInventory()
-    if not inv:containsTagEvalRecurse(ItemTag.SCREWDRIVER, S.toolNotBroken) then
+    if not S.hasScrewdriver(playerObj) then
         disable(header, "IGUI_Scrappy_NoScrewdriver")
         return
     end
     local sub = ISContextMenu:getNew(context)
-    local count = 0
-    for _, partType in ipairs(S.REPAIR_ORDER) do
-        if inv:containsTypeRecurse(partType) then
-            local label = getItemNameFromFullType("Base." .. partType) .. " (+" .. percent(S.REPAIRS[partType].gain) .. ")"
-            sub:addOption(label, animal, onRepair, playerObj, partType)
-            count = count + 1
-        end
-    end
-    if count == 0 then
-        disable(header, "IGUI_Scrappy_NoParts")
-        return
-    end
     context:addSubMenu(header, sub)
+    addRepairEntries(sub, playerObj, animal)
+    addCalibrateEntry(sub, playerObj, animal)
 end
 
 Events.OnClickedAnimalForContext.Add(function(player, context, animals)
@@ -63,6 +79,6 @@ local function say(good, text)
 end
 
 S.clientHandlers.repaired = function(args) say(true, getText("IGUI_Scrappy_Repaired", tostring(args.pct) .. "%")) end
-S.clientHandlers.fullcondition = function() say(true, getText("IGUI_Scrappy_FullCondition")) end
+S.clientHandlers.calibrated = function(args) say(true, getText("IGUI_Scrappy_Calibrated", tostring(args.left))) end
 S.clientHandlers.degraded = function() say(false, getText("IGUI_Scrappy_Degraded")) end
 S.clientHandlers.broken = function() say(false, getText("IGUI_Scrappy_Broken")) end

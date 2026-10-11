@@ -3,22 +3,18 @@
 --     called by CompanionDogs_Strike on the server and read by field, so wrapping it is enough);
 --   * below GENZ_ScrappyShared.DEGRADED_BELOW the loot and the XP aura stop (they check S.isWorking);
 --   * at 0 it breaks: STAY until repaired, owner told once;
---   * "scrappyRepair": the owner, with a screwdriver, spends one part to restore condition and gets XP.
+--   * GENZ_ScrappyWear.maintain: what one cycle of GENZ_ScrappyMaintainAction does, called from its
+--     complete() (server in MP, local in single player).
 if isClient() and not isServer() then return end
 
 require "GENZ_ScrappyShared"
 local S = GENZ_Scrappy
 
+GENZ_ScrappyWear = GENZ_ScrappyWear or {}
+local Wear = GENZ_ScrappyWear
+
 local WEAR_PER_KILL = 0.01   -- 100 kills from new to broken
 local WEAR_PER_DAY = 0.05    -- 20 in-game days from new to broken, even standing still
-local REPAIR_REACH = 3       -- tiles between the mechanic and the dog
-
-local function animalFromArgs(args)
-    if not args then return nil end
-    if args.__animal then return args.__animal end
-    if args.id then return getAnimal(tonumber(args.id)) end
-    return nil
-end
 
 -- 2 = working, 1 = degraded, 0 = broken
 local function band(condition)
@@ -66,50 +62,71 @@ local function everyMinute()
     end
 end
 
-local function repair(player, args)
-    local CD = CompanionDogs
-    local dog = animalFromArgs(args)
-    if not player or not dog or not S.isScrappy(dog) or not CD.isOwnedBy(dog, player) then return end
-    local dx, dy = dog:getX() - player:getX(), dog:getY() - player:getY()
-    if dx * dx + dy * dy > REPAIR_REACH * REPAIR_REACH then
-        S.toOwner(player, "toofar", {})
-        return
-    end
-    local part = args.part and S.REPAIRS[args.part]
-    if not part then return end
+-- Takes one part out of the player's inventory, the way the base mod and ISFixGenerator do it.
+local function consumeOne(player, partType)
     local inv = player:getInventory()
-    if not inv:containsTagEvalRecurse(ItemTag.SCREWDRIVER, S.toolNotBroken) then return end
-    local item = inv:getFirstTypeRecurse(args.part)
-    if not item then return end
-    local old = S.condition(dog)
-    if old >= 1 then
-        S.toOwner(player, "fullcondition", {})
-        return
-    end
-
+    local item = inv:getFirstTypeRecurse(partType)
+    if not item then return false end
     local cont = item:getContainer() or inv
+    player:removeFromHands(item)
     if isServer() then
         sendRemoveItemFromContainer(cont, item)   -- before Remove: a bare Remove leaves a ghost item on the client
     end
     cont:Remove(item)
-    setCondition(dog, old + part.gain)
-    -- 5-argument form on purpose (decompiled 42.21): the short AddXP overloads only act when
-    -- isLocalPlayer(), which a player never is on a dedicated server. doXPBoost = true applies the normal
-    -- rules (traits, book, sandbox multiplier); AddXP fires Events.AddXP regardless of callLua, so the
-    -- Scrappy XP aura also applies when the repaired dog is working.
-    player:getXp():AddXP(Perks[part.perk], part.xp, true, true, false)
-    if old <= 0 and not S.isOff(dog) then
-        CD.setState(dog, CD.STATE_FOLLOW)
+    return true
+end
+
+-- XP through the vanilla global (what ISFixGenerator uses): on the server it goes through GameServer.addXp,
+-- which applies the normal multipliers AND syncs XP to the client (updateXpChecker). The short
+-- player:getXp():AddXP overloads give nothing on a dedicated server (skill §221). Events.AddXP fires inside,
+-- so the Scrappy XP aura applies when the dog is working.
+local function giveXp(player, perkName, amount)
+    addXp(player, Perks[perkName], amount)
+end
+
+local function calibrate(player, dog)
+    if not consumeOne(player, S.CALIBRATION.part) then return false end
+    local d = CompanionDogs.data(dog)
+    if d.scrappyCalDay ~= S.today() then
+        d.scrappyCalDay = S.today()
+        d.scrappyCalCount = 0
     end
-    CD.transmit(dog)
+    d.scrappyCalCount = d.scrappyCalCount + 1
+    giveXp(player, S.CALIBRATION.perk, S.CALIBRATION.xp)
+    CompanionDogs.transmit(dog)
+    S.toOwner(player, "calibrated", { left = S.calibrationsLeft(dog) })
+    return true
+end
+
+local function repair(player, dog, partType)
+    local old = S.condition(dog)
+    local gain = S.repairGain(player, partType)
+    if not consumeOne(player, partType) then return false end
+    setCondition(dog, old + gain)
+    giveXp(player, S.REPAIRS[partType].perk, S.REPAIRS[partType].xp)
+    if old <= 0 and not S.isOff(dog) then
+        CompanionDogs.setState(dog, CompanionDogs.STATE_FOLLOW)
+    end
+    CompanionDogs.transmit(dog)
     local pct = math.floor(S.condition(dog) * 100 + 0.5)
-    print("[GENZ_Scrappy] " .. tostring(player:getUsername()) .. " repaired Scrappy with " .. args.part .. " -> " .. pct .. "%")
+    print("[GENZ_Scrappy] " .. tostring(player:getUsername()) .. " repaired Scrappy with " .. partType .. " -> " .. pct .. "%")
     S.toOwner(player, "repaired", { pct = pct })
+    return true
+end
+
+-- One cycle of GENZ_ScrappyMaintainAction. Re-checks everything: complete() runs on the server with the
+-- server's copy of the dog, which is the one that counts.
+function Wear.maintain(player, dog, mode)
+    if not player or not dog or not S.canMaintain(player, dog, mode) then return false end
+    if mode == S.CALIBRATE then
+        return calibrate(player, dog)
+    end
+    return repair(player, dog, mode)
 end
 
 Events.OnGameBoot.Add(function()
     local CD = CompanionDogs
-    if not (CD and CD.Server and CD.recordDogZombieKill and CD.regCompanions) then
+    if not (CD and CD.recordDogZombieKill and CD.regCompanions) then
         print("[GENZ_Scrappy] ERROR: CompanionDogs API missing (recordDogZombieKill/regCompanions) -- wear is OFF")
         return
     end
@@ -120,7 +137,6 @@ Events.OnGameBoot.Add(function()
             setCondition(animal, S.condition(animal) - WEAR_PER_KILL)
         end
     end
-    CD.Server.scrappyRepair = repair
     Events.EveryOneMinute.Add(everyMinute)
     print(string.format("[GENZ_Scrappy] wear on: %.0f%% per kill, %.0f%% per in-game day, degraded below %.0f%%",
                         WEAR_PER_KILL * 100, WEAR_PER_DAY * 100, S.DEGRADED_BELOW * 100))

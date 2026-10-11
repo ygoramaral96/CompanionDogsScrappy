@@ -48,12 +48,18 @@ end
 -- WEAR: condition 1 = new, 0 = broken, kept in the dog's CompanionDogs data (survives being picked up,
 -- tested in game 10/10). A Scrappy that never wore down has no value yet: it is new.
 S.DEGRADED_BELOW = 0.1   -- below this: no jewel loot, no XP aura; at 0 it breaks and stays put
--- Parts by item TYPE (Base module). gain = condition restored, xp = perk XP given to the mechanic.
+-- Maintenance is a training activity, modelled on the vanilla generator repair (ISFixGenerator: one
+-- ElectronicsScrap per cycle, +4% + Electricity level / 2, 5 XP, repeats until full). Scrappy pays double
+-- XP on Electricity on purpose: it is meant to be THE way to train it. Only a screwdriver is needed.
+-- Parts by item TYPE (Base module): gain = base + perkLevel * perLevel (condition, 0..1); xp = perk XP.
 S.REPAIRS = {
-    ElectronicsScrap = { gain = 0.25, perk = "Electricity", xp = 5 },
-    ScrapMetal       = { gain = 0.10, perk = "MetalWelding", xp = 5 },
+    ElectronicsScrap = { perk = "Electricity", xp = 10, base = 0.04, perLevel = 0.005 },
+    ScrapMetal       = { perk = "MetalWelding", xp = 15, base = 0.02, perLevel = 0.0025 },
 }
 S.REPAIR_ORDER = { "ElectronicsScrap", "ScrapMetal" }
+-- "Calibrate circuits": Electricity training that does not need wear, a few times per in-game day.
+S.CALIBRATE = "calibrate"
+S.CALIBRATION = { part = "ElectronicsScrap", perk = "Electricity", xp = 10, perDay = 3 }
 
 function S.condition(animal)
     local value = CompanionDogs.data(animal).scrappyCondition
@@ -72,6 +78,37 @@ end
 
 function S.toolNotBroken(item)
     return not item:isBroken()
+end
+
+function S.hasScrewdriver(player)
+    return player:getInventory():containsTagEvalRecurse(ItemTag.SCREWDRIVER, S.toolNotBroken)
+end
+
+function S.repairGain(player, partType)
+    local part = S.REPAIRS[partType]
+    return part.base + player:getPerkLevel(Perks[part.perk]) * part.perLevel
+end
+
+function S.today()
+    return math.floor(getGameTime():getWorldAgeHours() / 24)
+end
+
+function S.calibrationsLeft(animal)
+    local d = CompanionDogs.data(animal)
+    if d.scrappyCalDay ~= S.today() then return S.CALIBRATION.perDay end
+    return S.CALIBRATION.perDay - (d.scrappyCalCount or 0)
+end
+
+-- Can this player run maintenance `mode` on this dog right now? Shared by the action (client and server)
+-- and the context menu, so the three never disagree.
+function S.canMaintain(player, animal, mode)
+    if not S.isScrappy(animal) or not CompanionDogs.isOwnedBy(animal, player) then return false end
+    if not S.hasScrewdriver(player) then return false end
+    local inv = player:getInventory()
+    if mode == S.CALIBRATE then
+        return S.calibrationsLeft(animal) > 0 and inv:containsTypeRecurse(S.CALIBRATION.part)
+    end
+    return S.REPAIRS[mode] ~= nil and S.condition(animal) < 1 and inv:containsTypeRecurse(mode)
 end
 
 -- Server -> owner. sendServerCommand only acts when GameServer.server (decompiled 42.21), so in single
