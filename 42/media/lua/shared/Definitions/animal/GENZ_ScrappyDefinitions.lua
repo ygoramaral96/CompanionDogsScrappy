@@ -1,12 +1,12 @@
--- Scrappy animal types. Same skeleton, animset and dog behaviour as the base mod; prototype body is
--- the German Shepherd mesh (GermanShepherd_Body, shipped by Companion Dogs) with a Scrappy texture.
+-- Scrappy animal types. Same skeleton, animset and dog behaviour as the base mod. Body = Scrappy_Body
+-- (models_scrappy.txt): our mesh skinned onto the German Shepherd skeleton, so it plays the same clips.
 -- Separate "scrappy*" types because the engine binds a mesh/texture per type, not per breed.
 -- Size tier is the German Shepherd's, same as the Doberman add-on uses.
 -- Gate: without the base mod (0.6.3+) the add-on stays inert.
 if not (CompanionDogs and CompanionDogs.applyDogModel and CompanionDogs.DOG_SOUNDS) then return end
 local CD = CompanionDogs
 
-local BODY_MODEL = "GermanShepherd_Body"   -- replace with "Scrappy_Body" when our own mesh exists
+local BODY_MODEL = "Scrappy_Body"
 
 AnimalDefinitions = AnimalDefinitions or {}
 AnimalDefinitions.stages = AnimalDefinitions.stages or {}
