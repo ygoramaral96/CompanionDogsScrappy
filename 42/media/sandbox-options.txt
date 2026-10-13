@@ -263,3 +263,25 @@ option GENZ_Scrappy.CycleTimePerLevel
     translation = GENZ_Scrappy_CycleTimePerLevel,
     tooltip = GENZ_Scrappy_CycleTimePerLevel_tooltip,
 }
+
+option GENZ_Scrappy.ThreatAmber
+{
+    type = integer,
+    min = 1,
+    default = 3,
+    max = 100,
+    page = GENZ_Scrappy,
+    translation = GENZ_Scrappy_ThreatAmber,
+    tooltip = GENZ_Scrappy_ThreatAmber_tooltip,
+}
+
+option GENZ_Scrappy.ThreatRed
+{
+    type = integer,
+    min = 1,
+    default = 8,
+    max = 200,
+    page = GENZ_Scrappy,
+    translation = GENZ_Scrappy_ThreatRed,
+    tooltip = GENZ_Scrappy_ThreatRed_tooltip,
+}

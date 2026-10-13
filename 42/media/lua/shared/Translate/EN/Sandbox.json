@@ -47,5 +47,9 @@
     "Sandbox_GENZ_Scrappy_CycleTime": "Maintenance: cycle duration (default 150)",
     "Sandbox_GENZ_Scrappy_CycleTime_tooltip": "Duration of each repair or calibration cycle at level 0, in game action units (the generator repair uses 150).",
     "Sandbox_GENZ_Scrappy_CycleTimePerLevel": "Maintenance: shorter per level (default 3)",
-    "Sandbox_GENZ_Scrappy_CycleTimePerLevel_tooltip": "How much the cycle shortens per level of the skill used."
+    "Sandbox_GENZ_Scrappy_CycleTimePerLevel_tooltip": "How much the cycle shortens per level of the skill used.",
+    "Sandbox_GENZ_Scrappy_ThreatAmber": "Amber alert: zombies nearby (default 3)",
+    "Sandbox_GENZ_Scrappy_ThreatAmber_tooltip": "From how many zombies near Scrappy (within the range dogs attack at) the eye and the light turn amber.",
+    "Sandbox_GENZ_Scrappy_ThreatRed": "Red alert: zombies nearby (default 8)",
+    "Sandbox_GENZ_Scrappy_ThreatRed_tooltip": "From how many zombies near Scrappy (within the range dogs attack at) the eye and the light turn red."
 }

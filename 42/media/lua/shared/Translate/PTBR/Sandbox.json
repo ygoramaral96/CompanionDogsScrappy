@@ -47,5 +47,9 @@
     "Sandbox_GENZ_Scrappy_CycleTime": "Manutenção: duração do ciclo (padrão 150)",
     "Sandbox_GENZ_Scrappy_CycleTime_tooltip": "Duração de cada ciclo de conserto ou calibração no nível 0, em unidades de ação do jogo (o conserto do gerador usa 150).",
     "Sandbox_GENZ_Scrappy_CycleTimePerLevel": "Manutenção: duração a menos por nível (padrão 3)",
-    "Sandbox_GENZ_Scrappy_CycleTimePerLevel_tooltip": "Quanto o ciclo encurta por nível da habilidade usada."
+    "Sandbox_GENZ_Scrappy_CycleTimePerLevel_tooltip": "Quanto o ciclo encurta por nível da habilidade usada.",
+    "Sandbox_GENZ_Scrappy_ThreatAmber": "Alerta âmbar: zumbis por perto (padrão 3)",
+    "Sandbox_GENZ_Scrappy_ThreatAmber_tooltip": "A partir de quantos zumbis perto do Scrappy (no alcance em que os cães atacam) o olho e a luz ficam âmbar.",
+    "Sandbox_GENZ_Scrappy_ThreatRed": "Alerta vermelho: zumbis por perto (padrão 8)",
+    "Sandbox_GENZ_Scrappy_ThreatRed_tooltip": "A partir de quantos zumbis perto do Scrappy (no alcance em que os cães atacam) o olho e a luz ficam vermelhos."
 }
