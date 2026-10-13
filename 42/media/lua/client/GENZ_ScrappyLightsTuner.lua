@@ -9,6 +9,7 @@ if not isDebugEnabled() or isServer() then return end
 require "ISUI/ISCollapsableWindow"
 require "ISUI/ISButton"
 require "ISUI/ISTextEntryBox"
+require "ISUI/ISComboBox"
 require "GENZ_ScrappyShared"
 local S = GENZ_Scrappy
 
@@ -72,15 +73,9 @@ local function wholeIn(low, high)
     end
 end
 
--- "-" (or empty) = the real zombies; 0, 1, 2 = that alert level
-local function parseForced(text)
-    if text == "" or text == "-" then return false end
-    local n = tonumber(text)
-    if n ~= 0 and n ~= 1 and n ~= 2 then return nil, "use 0, 1, 2 ou - (zumbis de verdade)" end
-    return n
-end
-
--- A row = a label and one or more cells; a cell = show() -> text, parse(text), set(value).
+-- A row = a label and one or more cells; a cell = show() -> text, parse(text), set(value). A cell with
+-- `options` is a drop-down list (ISComboBox) instead of a typed field: a small closed set of values is
+-- picked, never typed (skill pz-ajuste-ao-vivo, item 4).
 local function cellOf(spec, key, parse)
     return {
         show = function() return fmt(spec[key]) end,
@@ -89,13 +84,41 @@ local function cellOf(spec, key, parse)
     }
 end
 
+-- options = { { text, value }, ... }; get() -> current value; set(value)
+local function choiceCell(options, get, set)
+    return {
+        options = options,
+        show = function()
+            local current = get()
+            for _, option in ipairs(options) do
+                if option[2] == current then return option[1] end
+            end
+            return options[1][1]
+        end,
+        parse = function(text)
+            for _, option in ipairs(options) do
+                if option[1] == text then return option[2] end
+            end
+            return nil, "escolha uma opcao da lista"
+        end,
+        set = set,
+    }
+end
+
+local BEAM_COUNTS = { { "0 (so' a cabeca)", 0 } }
+for n = 1, 6 do BEAM_COUNTS[#BEAM_COUNTS + 1] = { tostring(n), n } end
+
+-- false = the real zombies near the dog
+local FORCED_ALERTS = { { "- zumbis de verdade", false }, { "0 verde", 0 }, { "1 ambar", 1 }, { "2 vermelho", 2 } }
+
 local function buildRows(debug)
     local head, beam = debug.head, debug.beam
     local rows = {
         { label = "cabeca: frente lado raio forca", cells = {
             cellOf(head, "ahead", numberIn(-5, 10)), cellOf(head, "side", numberIn(-5, 5)),
             cellOf(head, "radius", wholeIn(1, 10)), cellOf(head, "strength", numberIn(0, 3)) } },
-        { label = "feixe: quantas luzes (0-6)", cells = { cellOf(beam, "count", wholeIn(0, 6)) } },
+        { label = "feixe: quantas luzes", cells = { choiceCell(BEAM_COUNTS,
+            function() return beam.count end, function(v) beam.count = v end) } },
         { label = "feixe: inicio, espaco", cells = {
             cellOf(beam, "start", numberIn(0, 10)), cellOf(beam, "spacing", numberIn(0.5, 5)) } },
         { label = "feixe: raio, +raio/luz", cells = {
@@ -109,11 +132,8 @@ local function buildRows(debug)
         for c = 1, 3 do cells[c] = cellOf(tint, c, numberIn(0, 1)) end
         rows[#rows + 1] = { label = "cor " .. ALERT_NAMES[level] .. " (r g b)", cells = cells }
     end
-    rows[#rows + 1] = { label = "forcar alerta (0/1/2, -)", cells = { {
-        show = function() return debug.forcedAlert and tostring(debug.forcedAlert) or "-" end,
-        parse = parseForced,
-        set = function(v) debug.forcedAlert = v or nil end,
-    } } }
+    rows[#rows + 1] = { label = "forcar alerta", cells = { choiceCell(FORCED_ALERTS,
+        function() return debug.forcedAlert or false end, function(v) debug.forcedAlert = v or nil end) } }
     return rows
 end
 
@@ -156,8 +176,32 @@ end
 local function onCellChanged(row, entry)
     row.bad = false
     for _, cell in ipairs(row.cells) do
-        if cell.parse(cell.entry:getText()) == nil then row.bad = true end
+        if cell.parse(cell.read()) == nil then row.bad = true end
     end
+end
+
+-- A drop-down for a closed set of values: nothing to validate, the list holds only valid ones.
+local function makeChoiceBox(cell, x, y, w)
+    local box = ISComboBox:new(x, y, w, ROW - 3, nil, nil)
+    box:initialise()
+    for _, option in ipairs(cell.options) do box:addOption(option[1]) end
+    box:select(cell.show())
+    cell.read = function() return box:getSelectedText() end
+    cell.write = function(text) box:select(text) end
+    return box
+end
+
+local function makeEntry(row, cell, x, y, w)
+    local entry = ISTextEntryBox:new(cell.show(), x, y, w, ROW - 3)
+    entry:initialise()
+    entry:instantiate()
+    entry:setOnlyNumbers(true)          -- digits, "." and "-" only (Core keyboard filter, 42.21)
+    entry:setMaxTextLength(MAX_CHARS)
+    entry.target = row
+    entry.onTextChangeFunction = onCellChanged
+    cell.read = function() return entry:getText() end
+    cell.write = function(text) entry:setText(text) end
+    return entry
 end
 
 function GENZ_ScrappyLightsTuner:createChildren()
@@ -168,16 +212,12 @@ function GENZ_ScrappyLightsTuner:createChildren()
         local n = #row.cells
         local cellW = (ENTRY_W - CELL_GAP * (n - 1)) / n
         for c, cell in ipairs(row.cells) do
-            local entry = ISTextEntryBox:new(cell.show(), entryX + (c - 1) * (cellW + CELL_GAP),
-                top + (i - 1) * ROW, cellW, ROW - 3)
-            entry:initialise()
-            entry:instantiate()
-            entry:setOnlyNumbers(true)          -- digits, "." and "-" only (Core keyboard filter, 42.21)
-            entry:setMaxTextLength(MAX_CHARS)
-            entry.target = row
-            entry.onTextChangeFunction = onCellChanged
-            self:addChild(entry)
-            cell.entry = entry
+            local x, y = entryX + (c - 1) * (cellW + CELL_GAP), top + (i - 1) * ROW
+            if cell.options then
+                self:addChild(makeChoiceBox(cell, x, y, cellW))
+            else
+                self:addChild(makeEntry(row, cell, x, y, cellW))
+            end
         end
     end
     local buttonsY = top + #self.rows * ROW + PAD
@@ -207,7 +247,7 @@ end
 function GENZ_ScrappyLightsTuner:refreshEntries()
     for _, row in ipairs(self.rows) do
         row.bad = false
-        for _, cell in ipairs(row.cells) do cell.entry:setText(cell.show()) end
+        for _, cell in ipairs(row.cells) do cell.write(cell.show()) end
     end
 end
 
@@ -216,7 +256,7 @@ function GENZ_ScrappyLightsTuner:onApply()
     local values = {}
     for _, row in ipairs(self.rows) do
         for _, cell in ipairs(row.cells) do
-            local value, err = cell.parse(cell.entry:getText())
+            local value, err = cell.parse(cell.read())
             if value == nil then
                 row.bad = true
                 chatLine(row.label .. ": " .. err .. " -- nada aplicado", true)
