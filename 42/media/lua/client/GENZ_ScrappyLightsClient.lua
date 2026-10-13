@@ -43,7 +43,8 @@ local ALERT = {
 -- line is already at ~85% of white (the shader cannot go further), so the light is what makes the eyes
 -- read strong. Tested 13/10: a radius-2 head light painted the whole dog green -- the head light stays
 -- small and faint, the beam ahead carries the colour.
-local HEAD_LIGHT = { ahead = 0.6, side = 0, radius = 1, strength = 0.45 }   -- the head, where the eyes are
+-- the head, where the eyes are; ahead 1.3 found in game with /scrappy_luzes (Ygor, 13/10)
+local HEAD_LIGHT = { ahead = 1.3, side = 0, radius = 1, strength = 0.45 }
 -- the beam, built by rule (frontLights): count lights from `start` squares ahead, `spacing` apart; the
 -- radius starts at `radius` and grows by `radiusGrow` per light; the strength goes from `strengthNear` to
 -- `strengthFar`. 0 lights = head only. First guess 13/10 (Ygor tunes it with /scrappy_luzes).
