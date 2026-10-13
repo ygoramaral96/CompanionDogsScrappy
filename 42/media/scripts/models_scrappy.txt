@@ -8,7 +8,8 @@ module Base
        GENZ_ScrappyLightsClient swaps to ScrappyOff.png (red line) when it shuts down.
        Ruler: scripts/scrappy/checar_scrappy_neon.py
        saddlebags_l/_r stay empty on Scrappy (built-in bag); saddlebags_c carries the ammo case
-       (GENZ_ScrappyCargoBox) while the bag holds something -- FIRST GUESS, tune in game. */
+       (GENZ_ScrappyCargoBox) while the bag holds something -- placed by Ygor in the game's attachment
+       editor (Shift+F7, debug) on 13/10, in a dark scene: confirm in game. */
     model Scrappy_Body
     {
         mesh = Skinned/Scrappy_Body,
@@ -37,7 +38,7 @@ module Base
         }
         attachment saddlebags_c
         {
-            offset = 0.0 0.04 -0.03,
+            offset = 0.0 0.0440 -0.0364,
             rotate = 0.0 -90.0 90.0,
             scale = 1.0,
             bone = Spine_03,
