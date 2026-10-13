@@ -1,7 +1,8 @@
 -- Scrappy lights, client side (card #246).
 --   EYES AND BACK LAMPS: switched on, it wears Scrappy.png -- lime visor line and 4 amber back lamps,
---   both glowing through genz_scrappy_neon (the lamps throw no light on the world); shut down, it wears
---   ScrappyOff.png -- red visor line (much weaker glow) and dark lamps.
+--   both glowing through genz_scrappy_neon (the lamps throw no light on the world); on but no longer
+--   working (worn: no loot, no aura) it wears ScrappyWorn.png -- lime visor, lamps dark; shut down, it
+--   wears ScrappyOff.png -- red visor line (much weaker glow) and dark lamps.
 --   FRONT LIGHT: switched on, a dim lime light starts on its head and reaches ahead where it looks. The
 --   engine only builds real cone lights (TorchInfo) for players and car lamps (LightingJNI, 42.21), so
 --   the "cone" is two point lights (IsoLightSource, as in GENZ_MascoteGlow): one on the head's square,
@@ -15,8 +16,10 @@
 require "GENZ_ScrappyShared"
 local S = GENZ_Scrappy
 
-local TEXTURE_ON = "Scrappy"       -- media/textures/Body/<name>.png (ModelInstanceTextureCreator, 42.21)
-local TEXTURE_OFF = "ScrappyOff"
+-- media/textures/Body/<name>.png (ModelInstanceTextureCreator, 42.21)
+local TEXTURE_ON = "Scrappy"       -- working: lime visor, amber back lamps
+local TEXTURE_WORN = "ScrappyWorn" -- on but not working (no loot, no aura): lime visor, lamps dark
+local TEXTURE_OFF = "ScrappyOff"   -- shut down: red visor, lamps dark
 local SKIN_EVERY_TICKS = 30        -- about half a second: a shutdown shows almost at once
 local LIGHT_EVERY_TICKS = 5        -- the light keeps up with a running dog
 -- ahead = squares from the body centre; radius in squares; colour 0..1 (above 1 bleaches to white,
@@ -31,8 +34,10 @@ local LIGHT_STEPS = 10             -- the fade changes in 10% steps: a light is 
 
 local lightsByDog = {}             -- [animal] = { { src, x, y, z }, ... } one per FRONT_LIGHTS entry
 
+-- S.isWorking is the same test the loot and the XP aura use: the lamps go dark exactly when they stop.
 local function wantedTexture(animal)
     if S.isOff(animal) then return TEXTURE_OFF end
+    if not S.isWorking(animal) then return TEXTURE_WORN end
     return TEXTURE_ON
 end
 
