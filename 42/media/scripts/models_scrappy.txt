@@ -39,7 +39,7 @@ module Base
         }
         attachment saddlebags_c
         {
-            offset = 0.0 0.0040 -0.0364,
+            offset = 0.0 0.0090 -0.0364,
             rotate = 270.0 0.0 0.0,
             scale = 0.5,
             bone = Spine_03,
