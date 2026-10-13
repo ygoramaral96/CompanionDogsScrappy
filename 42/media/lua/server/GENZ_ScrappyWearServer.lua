@@ -1,7 +1,7 @@
 -- Scrappy wear and maintenance, server side (card #246).
 --   * wear: a little every in-game minute, and more for each zombie it kills (CD.recordDogZombieKill,
 --     called by CompanionDogs_Strike on the server and read by field, so wrapping it is enough);
---   * below GENZ_ScrappyShared.DEGRADED_BELOW the loot and the XP aura stop (they check S.isWorking);
+--   * below GENZ_Scrappy.degradedBelow() the loot and the XP aura stop (they check S.isWorking);
 --   * at 0 it breaks: STAY until repaired, owner told once;
 --   * GENZ_ScrappyWear.maintain: what one cycle of GENZ_ScrappyMaintainAction does, called from its
 --     complete() (server in MP, local in single player).
@@ -13,13 +13,15 @@ local S = GENZ_Scrappy
 GENZ_ScrappyWear = GENZ_ScrappyWear or {}
 local Wear = GENZ_ScrappyWear
 
-local WEAR_PER_KILL = 0.01   -- 100 kills from new to broken
-local WEAR_PER_DAY = 0.05    -- 20 in-game days from new to broken, even standing still
+-- Sandbox WearPerKill (1%: 100 kills from new to broken) and WearPerDay (5%: 20 in-game days, even standing
+-- still), read on every use so an admin change applies at once.
+local function wearPerKill() return S.opt("WearPerKill") / 100 end
+local function wearPerDay() return S.opt("WearPerDay") / 100 end
 
 -- 2 = working, 1 = degraded, 0 = broken
 local function band(condition)
     if condition <= 0 then return 0 end
-    if condition < S.DEGRADED_BELOW then return 1 end
+    if condition < S.degradedBelow() then return 1 end
     return 2
 end
 
@@ -50,7 +52,7 @@ local function everyMinute()
         if dog:isExistInTheWorld() and not dog:isDead() and S.isScrappy(dog) then
             if not S.isBroken(dog) then
                 local oldBand = band(S.condition(dog))
-                setCondition(dog, S.condition(dog) - WEAR_PER_DAY / 1440)
+                setCondition(dog, S.condition(dog) - wearPerDay() / 1440)
                 if band(S.condition(dog)) ~= oldBand then
                     CD.transmit(dog)
                 end
@@ -84,6 +86,20 @@ local function giveXp(player, perkName, amount)
     addXp(player, Perks[perkName], amount)
 end
 
+-- Rolled AFTER the part is spent, like FixingManager.fixItem: Rand.Next(100) >= fail means success.
+local function rolledFailure(player, mode)
+    return ZombRand(100) < S.failPercent(player, mode)
+end
+
+-- The vanilla failed repair: the part is already gone, -1% condition, no XP.
+local function fail(player, dog, mode)
+    setCondition(dog, S.condition(dog) - S.failedWear())
+    CompanionDogs.transmit(dog)
+    print("[GENZ_Scrappy] " .. tostring(player:getUsername()) .. " FAILED " .. mode .. " on Scrappy ("
+          .. S.failPercent(player, mode) .. "% chance) -> " .. math.floor(S.condition(dog) * 100 + 0.5) .. "%")
+    S.toOwner(player, "failed", { mode = mode })
+end
+
 local function calibrate(player, dog)
     if not consumeOne(player, S.CALIBRATION.part) then return false end
     local d = CompanionDogs.data(dog)
@@ -92,7 +108,11 @@ local function calibrate(player, dog)
         d.scrappyCalCount = 0
     end
     d.scrappyCalCount = d.scrappyCalCount + 1
-    giveXp(player, S.CALIBRATION.perk, S.CALIBRATION.xp)
+    if rolledFailure(player, S.CALIBRATE) then
+        fail(player, dog, S.CALIBRATE)
+        return true
+    end
+    giveXp(player, S.CALIBRATION.perk, S.maintenanceXp(S.CALIBRATE))
     CompanionDogs.transmit(dog)
     S.toOwner(player, "calibrated", { left = S.calibrationsLeft(dog) })
     return true
@@ -102,8 +122,12 @@ local function repair(player, dog, partType)
     local old = S.condition(dog)
     local gain = S.repairGain(player, partType)
     if not consumeOne(player, partType) then return false end
+    if rolledFailure(player, partType) then
+        fail(player, dog, partType)
+        return true
+    end
     setCondition(dog, old + gain)
-    giveXp(player, S.REPAIRS[partType].perk, S.REPAIRS[partType].xp)
+    giveXp(player, S.REPAIRS[partType].perk, S.maintenanceXp(partType))
     if old <= 0 and not S.isOff(dog) then
         CompanionDogs.setState(dog, CompanionDogs.STATE_FOLLOW)
     end
@@ -134,10 +158,9 @@ Events.OnGameBoot.Add(function()
     CD.recordDogZombieKill = function(animal)
         originalKill(animal)
         if S.isScrappy(animal) and not S.isBroken(animal) then
-            setCondition(animal, S.condition(animal) - WEAR_PER_KILL)
+            setCondition(animal, S.condition(animal) - wearPerKill())
         end
     end
     Events.EveryOneMinute.Add(everyMinute)
-    print(string.format("[GENZ_Scrappy] wear on: %.0f%% per kill, %.0f%% per in-game day, degraded below %.0f%%",
-                        WEAR_PER_KILL * 100, WEAR_PER_DAY * 100, S.DEGRADED_BELOW * 100))
+    print("[GENZ_Scrappy] wear on (rates and thresholds: sandbox page GENZ_Scrappy)")
 end)

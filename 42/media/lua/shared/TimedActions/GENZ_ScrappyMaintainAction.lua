@@ -98,7 +98,8 @@ function Action:getDuration()
     if self.character:isTimedActionInstant() then
         return 1
     end
-    return 150 - self.character:getPerkLevel(Perks[perkOf(self.mode)]) * 3
+    local level = self.character:getPerkLevel(Perks[perkOf(self.mode)])
+    return math.max(1, S.opt("CycleTime") - level * S.opt("CycleTimePerLevel"))
 end
 
 function Action:new(character, animal, mode)

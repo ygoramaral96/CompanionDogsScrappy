@@ -17,8 +17,6 @@ if isClient() and not isServer() then return end
 require "GENZ_ScrappyShared"
 local S = GENZ_Scrappy
 
-local LOOT_RADIUS = 8   -- tiles from the corpse to the dog, same floor
-
 local function sameFloor(a, b)
     return math.floor(a) == math.floor(b)
 end
@@ -26,6 +24,7 @@ end
 local function closestScrappy(x, y, z)
     local CD = CompanionDogs
     local best, bestDist
+    local radius = S.opt("LootRadius")   -- tiles from the corpse to the dog, same floor; read per death (live)
     local dogs = CD.regCompanions()
     for i = 1, #dogs do
         local dog = dogs[i]
@@ -33,7 +32,7 @@ local function closestScrappy(x, y, z)
                 and sameFloor(dog:getZ(), z) then
             local dx, dy = dog:getX() - x, dog:getY() - y
             local dist = dx * dx + dy * dy
-            if dist <= LOOT_RADIUS * LOOT_RADIUS and (bestDist == nil or dist < bestDist) then
+            if dist <= radius * radius and (bestDist == nil or dist < bestDist) then
                 best, bestDist = dog, dist
             end
         end
@@ -85,5 +84,5 @@ Events.OnGameBoot.Add(function()
     Events.OnZombieDead.Add(function(zombie)
         moveJewelsToBag(zombie, jewels)
     end)
-    print("[GENZ_Scrappy] jewelry loot on (radius " .. LOOT_RADIUS .. " tiles)")
+    print("[GENZ_Scrappy] jewelry loot on (radius: sandbox GENZ_Scrappy.LootRadius)")
 end)
