@@ -1,5 +1,5 @@
 -- Scrappy lights tuner, DEBUG ONLY (card #246, skill pz-ajuste-ao-vivo): a small native window, opened and
--- closed by the chat command /scrappy_luzes, that edits the front lights and the alert colours of
+-- closed by the chat command /scrappy_luzes, that edits the head light, the beam and the alert colours of
 -- GENZ_ScrappyLightsClient live (through S.lightsDebug). Type the values, press Aplicar.
 --   Copiar bloco  -> the numbers, as they go in the .lua, in the chat and in console.txt
 --   Voltar ao arquivo -> the numbers the game started with
@@ -15,8 +15,8 @@ local S = GENZ_Scrappy
 local COMMAND = "/scrappy_luzes"
 local TAG = "[GENZ_ScrappyLightsTuner] "
 local ROW = 22
-local LABEL_W = 150
-local ENTRY_W = 150
+local LABEL_W = 180                -- the longest label, "cabeca: frente lado raio forca"
+local ENTRY_W = 170                -- 4 small cells on the head row
 local CELL_GAP = 4
 local MAX_CHARS = 7
 local PAD = 10
@@ -59,7 +59,7 @@ local function wholeIn(low, high)
     return function(text)
         local n, err = check(text)
         if not n then return nil, err end
-        if n ~= math.floor(n) then return nil, "tem que ser inteiro (o jogo so' aceita raio inteiro)" end
+        if n ~= math.floor(n) then return nil, "tem que ser inteiro" end
         return n
     end
 end
@@ -73,33 +73,32 @@ local function parseForced(text)
 end
 
 -- A row = a label and one or more cells; a cell = show() -> text, parse(text), set(value).
+local function cellOf(spec, key, parse)
+    return {
+        show = function() return fmt(spec[key]) end,
+        parse = parse,
+        set = function(v) spec[key] = v end,
+    }
+end
+
 local function buildRows(debug)
-    local rows = {}
-    local lightNames = { "cabeca", "frente" }
-    for i, spec in ipairs(debug.front) do
-        local name = lightNames[i] or ("luz " .. i)
-        local function add(key, label, parse)
-            rows[#rows + 1] = { label = name .. ": " .. label, cells = { {
-                show = function() return fmt(spec[key]) end,
-                parse = parse,
-                set = function(v) spec[key] = v end,
-            } } }
-        end
-        add("ahead", "a frente (quadr.)", numberIn(-5, 10))
-        add("side", "lado (quadr., +dir)", numberIn(-5, 5))
-        add("radius", "raio (quadr.)", wholeIn(1, 10))
-        add("strength", "forca", numberIn(0, 3))
-    end
+    local head, beam = debug.head, debug.beam
+    local rows = {
+        { label = "cabeca: frente lado raio forca", cells = {
+            cellOf(head, "ahead", numberIn(-5, 10)), cellOf(head, "side", numberIn(-5, 5)),
+            cellOf(head, "radius", wholeIn(1, 10)), cellOf(head, "strength", numberIn(0, 3)) } },
+        { label = "feixe: quantas luzes (0-6)", cells = { cellOf(beam, "count", wholeIn(0, 6)) } },
+        { label = "feixe: inicio, espaco", cells = {
+            cellOf(beam, "start", numberIn(0, 10)), cellOf(beam, "spacing", numberIn(0.5, 5)) } },
+        { label = "feixe: raio, +raio/luz", cells = {
+            cellOf(beam, "radius", wholeIn(1, 10)), cellOf(beam, "radiusGrow", wholeIn(0, 5)) } },
+        { label = "feixe: forca perto, longe", cells = {
+            cellOf(beam, "strengthNear", numberIn(0, 3)), cellOf(beam, "strengthFar", numberIn(0, 3)) } },
+    }
     for level = 0, 2 do
         local tint = debug.alert[level].tint
         local cells = {}
-        for c = 1, 3 do
-            cells[c] = {
-                show = function() return fmt(tint[c]) end,
-                parse = numberIn(0, 1),
-                set = function(v) tint[c] = v end,
-            }
-        end
+        for c = 1, 3 do cells[c] = cellOf(tint, c, numberIn(0, 1)) end
         rows[#rows + 1] = { label = "cor " .. ALERT_NAMES[level] .. " (r g b)", cells = cells }
     end
     rows[#rows + 1] = { label = "forcar alerta (0/1/2, -)", cells = { {
@@ -110,15 +109,19 @@ local function buildRows(debug)
     return rows
 end
 
+local function copyOf(t)
+    local out = {}
+    for k, v in pairs(t) do out[k] = v end
+    return out
+end
+
+local function putBack(target, saved)
+    for k, v in pairs(saved) do target[k] = v end
+end
+
 local function snapshot(debug)
-    local copy = { front = {}, tints = {} }
-    for i, spec in ipairs(debug.front) do
-        copy.front[i] = { ahead = spec.ahead, side = spec.side, radius = spec.radius, strength = spec.strength }
-    end
-    for level = 0, 2 do
-        local t = debug.alert[level].tint
-        copy.tints[level] = { t[1], t[2], t[3] }
-    end
+    local copy = { head = copyOf(debug.head), beam = copyOf(debug.beam), tints = {} }
+    for level = 0, 2 do copy.tints[level] = copyOf(debug.alert[level].tint) end
     return copy
 end
 
@@ -224,10 +227,13 @@ function GENZ_ScrappyLightsTuner:onApply()
 end
 
 function GENZ_ScrappyLightsTuner:onCopy()
-    for _, spec in ipairs(self.debug.front) do
-        chatLine("{ ahead = " .. fmt(spec.ahead) .. ", side = " .. fmt(spec.side) .. ", radius = "
-            .. fmt(spec.radius) .. ", strength = " .. fmt(spec.strength) .. " },")
-    end
+    local head, beam = self.debug.head, self.debug.beam
+    chatLine("local HEAD_LIGHT = { ahead = " .. fmt(head.ahead) .. ", side = " .. fmt(head.side)
+        .. ", radius = " .. fmt(head.radius) .. ", strength = " .. fmt(head.strength) .. " }")
+    chatLine("BEAM: count = " .. fmt(beam.count) .. ", start = " .. fmt(beam.start) .. ", spacing = "
+        .. fmt(beam.spacing) .. ",")
+    chatLine("      radius = " .. fmt(beam.radius) .. ", radiusGrow = " .. fmt(beam.radiusGrow) .. ",")
+    chatLine("      strengthNear = " .. fmt(beam.strengthNear) .. ", strengthFar = " .. fmt(beam.strengthFar) .. ",")
     for level = 0, 2 do
         local t = self.debug.alert[level].tint
         chatLine(string.format("[%d] tint = { %.2f, %.2f, %.2f },  -- %s", level, t[1], t[2], t[3],
@@ -240,14 +246,9 @@ function GENZ_ScrappyLightsTuner:onRestore()
         chatLine("nada mudou ainda: ja' esta' no arquivo")
         return
     end
-    for i, spec in ipairs(self.debug.front) do
-        local saved = fileValues.front[i]
-        spec.ahead, spec.side, spec.radius, spec.strength = saved.ahead, saved.side, saved.radius, saved.strength
-    end
-    for level = 0, 2 do
-        local t, saved = self.debug.alert[level].tint, fileValues.tints[level]
-        t[1], t[2], t[3] = saved[1], saved[2], saved[3]
-    end
+    putBack(self.debug.head, fileValues.head)
+    putBack(self.debug.beam, fileValues.beam)
+    for level = 0, 2 do putBack(self.debug.alert[level].tint, fileValues.tints[level]) end
     self.debug.forcedAlert = nil
     self.debug.refresh()
     self:refreshEntries()

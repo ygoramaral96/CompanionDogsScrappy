@@ -5,11 +5,12 @@
 --     <worn>  = "" (amber back lamps lit) / "Worn" (lamps dark) when it no longer works -- S.isWorking,
 --               the same test the loot and the XP aura use, so the lamps go dark exactly when they stop;
 --   shut down: ScrappyOff.png -- red visor line (much weaker glow), lamps dark, no alert.
---   FRONT LIGHT: switched on, a light in the alert colour starts on its head and reaches ahead where it
---   looks. The engine only builds real cone lights (TorchInfo) for players and car lamps (LightingJNI,
---   42.21), so the "cone" is two point lights (IsoLightSource, as in GENZ_MascoteGlow): one on the head's
---   square, one further ahead. Lights snap to squares and exist only on clients (a dedicated server has
---   none).
+--   FRONT LIGHT: switched on, a light in the alert colour sits on its head and a BEAM reaches ahead where
+--   it looks. The engine only builds real cone lights (TorchInfo) for players holding a lamp and for car
+--   lamps (LightingJNI, 42.21; the list is Java-only), so the beam is a row of point lights (IsoLightSource,
+--   as in GENZ_MascoteGlow) whose radius grows with the distance -- a flashlight-like cone that still
+--   spills a little sideways and backwards around each point. Lights snap to squares and exist only on
+--   clients (a dedicated server has none).
 --   WEAR AND CHARGE: below the sandbox WorkingThreshold (S.degradedBelow -- the condition under which
 --   the loot and the XP aura stop), the front light fades with the condition AND with the battery
 --   charge, following the lower of the two, in LIGHT_STEPS steps; it goes out at 0 (Ygor, 13/10).
@@ -42,19 +43,39 @@ local ALERT = {
 -- line is already at ~85% of white (the shader cannot go further), so the light is what makes the eyes
 -- read strong. Tested 13/10: a radius-2 head light painted the whole dog green -- the head light stays
 -- small and faint, the beam ahead carries the colour.
-local FRONT_LIGHTS = {
-    { ahead = 0.6, side = 0, radius = 1, strength = 0.45 },   -- the head, where the eyes are
-    { ahead = 2.5, side = 0, radius = 2, strength = 0.75 },   -- where it looks
+local HEAD_LIGHT = { ahead = 0.6, side = 0, radius = 1, strength = 0.45 }   -- the head, where the eyes are
+-- the beam, built by rule (frontLights): count lights from `start` squares ahead, `spacing` apart; the
+-- radius starts at `radius` and grows by `radiusGrow` per light; the strength goes from `strengthNear` to
+-- `strengthFar`. 0 lights = head only. First guess 13/10 (Ygor tunes it with /scrappy_luzes).
+local BEAM = {
+    count = 3, start = 1.5, spacing = 1.5,
+    radius = 1, radiusGrow = 1,
+    strengthNear = 0.7, strengthFar = 0.6,
 }
 local LIGHT_STEPS = 10             -- the fade changes in 10% steps: a light is recreated only per step
 
-local lightsByDog = {}             -- [animal] = { { src, x, y, z, level, alert }, ... } per FRONT_LIGHTS
+local lightsByDog = {}             -- [animal] = { { src, x, y, z, level, alert }, ... } per frontLights()
 local alertByDog = {}              -- [animal] = { level, since } (since = last time this level was seen)
 
--- Door for the debug tuner (GENZ_ScrappyLightsTuner, debug only): it edits FRONT_LIGHTS and the ALERT tints
--- in place, may force an alert level, and calls refresh() so every light is rebuilt with the new numbers.
--- Nobody else writes here; forcedAlert stays nil outside a debug session.
-S.lightsDebug = { front = FRONT_LIGHTS, alert = ALERT, forcedAlert = nil }
+-- Door for the debug tuner (GENZ_ScrappyLightsTuner, debug only): it edits HEAD_LIGHT, BEAM and the ALERT
+-- tints in place, may force an alert level, and calls refresh() so every light is rebuilt with the new
+-- numbers. Nobody else writes here; forcedAlert stays nil outside a debug session.
+S.lightsDebug = { head = HEAD_LIGHT, beam = BEAM, alert = ALERT, forcedAlert = nil }
+
+-- The head light, then the beam's lights, near to far.
+local function frontLights()
+    local specs = { HEAD_LIGHT }
+    for i = 1, BEAM.count do
+        local share = BEAM.count > 1 and (i - 1) / (BEAM.count - 1) or 0
+        specs[#specs + 1] = {
+            ahead = BEAM.start + (i - 1) * BEAM.spacing,
+            side = 0,
+            radius = BEAM.radius + (i - 1) * BEAM.radiusGrow,
+            strength = BEAM.strengthNear + (BEAM.strengthFar - BEAM.strengthNear) * share,
+        }
+    end
+    return specs
+end
 
 local function zombiesNear(animal)
     local radius = CompanionDogs.ZOMBIE_ATTACK_RADIUS
@@ -123,7 +144,7 @@ local function removeLights(cell, animal)
     lightsByDog[animal] = nil
 end
 
--- Drop every light; the next light pass rebuilds them from FRONT_LIGHTS/ALERT as they are now.
+-- Drop every light; the next light pass rebuilds them from HEAD_LIGHT/BEAM/ALERT as they are now.
 function S.lightsDebug.refresh()
     local cell = getCell()
     if not cell then return end
@@ -153,7 +174,8 @@ local function placeLights(cell, animal, level)
     local alert = alertOf(animal)
     local tint = ALERT[alert].tint
     local lights = lightsByDog[animal] or {}
-    for i, spec in ipairs(FRONT_LIGHTS) do
+    local specs = frontLights()
+    for i, spec in ipairs(specs) do
         -- right of the facing (fx, fy) is (-fy, fx) in PZ's y-down world
         local x = math.floor(animal:getX() + fx * spec.ahead - fy * spec.side)
         local y = math.floor(animal:getY() + fy * spec.ahead + fx * spec.side)
@@ -166,6 +188,11 @@ local function placeLights(cell, animal, level)
             cell:addLamppost(src)
             lights[i] = { src = src, x = x, y = y, z = z, level = level, alert = alert }
         end
+    end
+    -- the beam got shorter: its far lights go
+    for i = #lights, #specs + 1, -1 do
+        cell:removeLamppost(lights[i].src)
+        lights[i] = nil
     end
     lightsByDog[animal] = lights
 end
