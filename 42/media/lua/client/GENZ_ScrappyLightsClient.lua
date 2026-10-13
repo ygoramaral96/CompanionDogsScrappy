@@ -81,6 +81,18 @@ local function placeLights(cell, animal, level)
     lightsByDog[animal] = lights
 end
 
+-- SONDA card #246 (remove after the reading): what this client uses for the light, printed on change.
+local probeLast = {}
+local function probeLight(animal)
+    local d = CompanionDogs.data(animal)
+    local line = string.format("off=%s scrappyOff=%s cond=%s threshold=%s level=%s",
+        tostring(S.isOff(animal)), tostring(d.scrappyOff), tostring(d.scrappyCondition),
+        tostring(S.degradedBelow()), tostring(lightLevel(animal)))
+    if probeLast[animal] == line then return end
+    probeLast[animal] = line
+    print("[GENZ_card246] light " .. line)
+end
+
 local function isLiveScrappy(animal)
     return not animal:isDead() and CompanionDogs.isDog(animal) and S.isScrappy(animal)
 end
@@ -99,6 +111,7 @@ Events.OnTick.Add(function()
         local animal = animals:get(i)
         if isLiveScrappy(animal) then
             if doSkin then syncSkin(animal) end
+            if doSkin then probeLight(animal) end
             local level = doLights and not S.isOff(animal) and lightLevel(animal) or 0
             if level > 0 then
                 placeLights(cell, animal, level)
