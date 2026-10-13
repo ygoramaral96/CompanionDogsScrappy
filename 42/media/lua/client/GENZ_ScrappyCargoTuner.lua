@@ -1,17 +1,17 @@
 -- Scrappy cargo-case tuner, DEBUG ONLY (card #246, skill pz-ajuste-ao-vivo): a small native window, opened
--- and closed by the chat command /caixa, that edits the saddlebags_c attachment of Scrappy_Body live --
+-- and closed by the chat command /scrappy_caixa, that edits the saddlebags_c attachment of Scrappy_Body live --
 -- offset, rotate, scale and the BONE it hangs from (a list of the dog's bones). Type, press Aplicar.
 --   Copiar bloco  -> the attachment block, as it goes in models_scrappy.txt, in the chat and in console.txt
 --   Voltar ao arquivo -> the numbers the game started with
--- Nothing is saved: reopening the game goes back to the file. Leaves the mod once the numbers are in the
--- file (skill pz-ajuste-ao-vivo, item 9).
+-- Fields take only digits, "." and "-" (setOnlyNumbers) and turn red while out of range. Nothing is saved:
+-- reopening the game goes back to the file. Stays in the mod for later tests (Ygor, 13/10).
 if not isDebugEnabled() or isServer() then return end
 require "ISUI/ISCollapsableWindow"
 require "ISUI/ISButton"
 require "ISUI/ISTextEntryBox"
 require "ISUI/ISComboBox"
 
-local COMMAND = "/caixa"
+local COMMAND = "/scrappy_caixa"
 local TAG = "[GENZ_ScrappyCargoTuner] "
 local MODEL = "Base.Scrappy_Body"
 local ATTACHMENT = "saddlebags_c"
@@ -19,6 +19,7 @@ local ROW = 22
 local LABEL_W = 110
 local ENTRY_W = 170
 local PAD = 10
+local MAX_CHARS = 8
 -- The skeleton of Scrappy_Body.glb (the German Shepherd's, 55 joints), read from the GLB's skin on 13/10;
 -- Translation_Data is animation data, not a place to hang anything.
 local BONES = {
@@ -119,6 +120,11 @@ end
 
 local fileValues = nil             -- the attachment before the first change of this session
 
+-- Red label while the field is out of range, as the player types.
+local function onFieldChanged(field, entry)
+    field.bad = field.parse(entry:getText()) == nil
+end
+
 GENZ_ScrappyCargoTuner = ISCollapsableWindow:derive("GENZ_ScrappyCargoTuner")
 
 function GENZ_ScrappyCargoTuner:new(attach)
@@ -144,6 +150,10 @@ function GENZ_ScrappyCargoTuner:createChildren()
         local entry = ISTextEntryBox:new(field.show(), entryX, top + (i - 1) * ROW, ENTRY_W, ROW - 3)
         entry:initialise()
         entry:instantiate()
+        entry:setOnlyNumbers(true)          -- digits, "." and "-" only (Core keyboard filter, 42.21)
+        entry:setMaxTextLength(MAX_CHARS)
+        entry.target = field
+        entry.onTextChangeFunction = onFieldChanged
         self:addChild(entry)
         field.entry = entry
     end
@@ -172,7 +182,7 @@ function GENZ_ScrappyCargoTuner:prerender()
     ISCollapsableWindow.prerender(self)
     local top = self:titleBarHeight() + PAD
     for i, field in ipairs(self.fields) do
-        local bad = field == self.badField
+        local bad = field.bad
         self:drawText(field.label, PAD, top + (i - 1) * ROW + 2, 1, bad and 0.35 or 1, bad and 0.25 or 1, 1,
             UIFont.Small)
     end
@@ -180,7 +190,10 @@ function GENZ_ScrappyCargoTuner:prerender()
 end
 
 function GENZ_ScrappyCargoTuner:refreshEntries()
-    for _, field in ipairs(self.fields) do field.entry:setText(field.show()) end
+    for _, field in ipairs(self.fields) do
+        field.bad = false
+        field.entry:setText(field.show())
+    end
     self.boneBox:select(self.attach:getBone())
 end
 
@@ -190,13 +203,12 @@ function GENZ_ScrappyCargoTuner:onApply()
     for i, field in ipairs(self.fields) do
         local value, err = field.parse(field.entry:getText())
         if value == nil then
-            self.badField = field
+            field.bad = true
             chatLine(field.label .. ": " .. err .. " -- nada aplicado", true)
             return
         end
         values[i] = value
     end
-    self.badField = nil
     fileValues = fileValues or snapshot(self.attach)
     for i, field in ipairs(self.fields) do field.set(values[i]) end
     self.attach:setBone(self.boneBox:getSelectedText())
@@ -230,7 +242,6 @@ function GENZ_ScrappyCargoTuner:onRestore()
     self.attach:setScale(saved.scale)
     self.attach:setBone(saved.bone)
     rehang()
-    self.badField = nil
     self:refreshEntries()
     chatLine("voltou ao arquivo")
 end
@@ -256,7 +267,7 @@ function GENZ_ScrappyCargoTuner.toggle()
     GENZ_ScrappyCargoTuner.instance = window
 end
 
--- Same chat wrap as the lights tuner (skill pz-ajuste-ao-vivo, "Comando de chat").
+-- Chat command wrap (skill pz-ajuste-ao-vivo, "Comando de chat").
 local function wrapChat()
     if not (ISChat and ISChat.onCommandEntered) or ISChat._genzScrappyCargoTuner then return end
     ISChat._genzScrappyCargoTuner = true

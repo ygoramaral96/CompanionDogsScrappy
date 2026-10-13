@@ -1,10 +1,10 @@
 -- Scrappy lights tuner, DEBUG ONLY (card #246, skill pz-ajuste-ao-vivo): a small native window, opened and
--- closed by the chat command /luzes, that edits the front lights and the alert colours of
+-- closed by the chat command /scrappy_luzes, that edits the front lights and the alert colours of
 -- GENZ_ScrappyLightsClient live (through S.lightsDebug). Type the values, press Aplicar.
 --   Copiar bloco  -> the numbers, as they go in the .lua, in the chat and in console.txt
 --   Voltar ao arquivo -> the numbers the game started with
--- Nothing is saved: reopening the game goes back to the file. Leaves the mod once the numbers are in the
--- file (skill pz-ajuste-ao-vivo, item 9).
+-- Fields take only digits, "." and "-" (setOnlyNumbers) and turn red while out of range. Nothing is saved:
+-- reopening the game goes back to the file. Stays in the mod for later tests (Ygor, 13/10).
 if not isDebugEnabled() or isServer() then return end
 require "ISUI/ISCollapsableWindow"
 require "ISUI/ISButton"
@@ -12,11 +12,13 @@ require "ISUI/ISTextEntryBox"
 require "GENZ_ScrappyShared"
 local S = GENZ_Scrappy
 
-local COMMAND = "/luzes"
+local COMMAND = "/scrappy_luzes"
 local TAG = "[GENZ_ScrappyLightsTuner] "
 local ROW = 22
 local LABEL_W = 150
 local ENTRY_W = 150
+local CELL_GAP = 4
+local MAX_CHARS = 7
 local PAD = 10
 local ALERT_NAMES = { [0] = "verde", [1] = "ambar", [2] = "vermelho" }
 
@@ -36,12 +38,13 @@ local function chatLine(text, isError)
     }, 0)
 end
 
--- %.3f without trailing zeros (the /caixa proved %.Nf in Kahlua; %g is not relied on)
+-- %.3f without trailing zeros (%.Nf is proven in Kahlua; %g is not relied on)
 local function fmt(n)
     local s = string.format("%.3f", n):gsub("0+$", ""):gsub("%.$", "")
     return s
 end
 
+-- parse(text) -> value | nil, reason
 local function numberIn(low, high)
     return function(text)
         local n = tonumber(text)
@@ -61,17 +64,7 @@ local function wholeIn(low, high)
     end
 end
 
--- "r g b", each 0..1
-local function parseColour(text)
-    local parts = {}
-    for word in string.gmatch(text, "%S+") do parts[#parts + 1] = tonumber(word) end
-    if #parts ~= 3 then return nil, "escreva 3 numeros: r g b" end
-    for _, v in ipairs(parts) do
-        if not v or v < 0 or v > 1 then return nil, "cada cor vai de 0 a 1" end
-    end
-    return parts
-end
-
+-- "-" (or empty) = the real zombies; 0, 1, 2 = that alert level
 local function parseForced(text)
     if text == "" or text == "-" then return false end
     local n = tonumber(text)
@@ -79,19 +72,18 @@ local function parseForced(text)
     return n
 end
 
--- One row per value: label, show() -> text, parse(text) -> value | nil, error, set(value).
-local function buildFields(debug)
-    local fields = {}
+-- A row = a label and one or more cells; a cell = show() -> text, parse(text), set(value).
+local function buildRows(debug)
+    local rows = {}
     local lightNames = { "cabeca", "frente" }
     for i, spec in ipairs(debug.front) do
         local name = lightNames[i] or ("luz " .. i)
         local function add(key, label, parse)
-            fields[#fields + 1] = {
-                label = name .. ": " .. label,
+            rows[#rows + 1] = { label = name .. ": " .. label, cells = { {
                 show = function() return fmt(spec[key]) end,
                 parse = parse,
                 set = function(v) spec[key] = v end,
-            }
+            } } }
         end
         add("ahead", "a frente (quadr.)", numberIn(-5, 10))
         add("side", "lado (quadr., +dir)", numberIn(-5, 5))
@@ -100,20 +92,22 @@ local function buildFields(debug)
     end
     for level = 0, 2 do
         local tint = debug.alert[level].tint
-        fields[#fields + 1] = {
-            label = "cor " .. ALERT_NAMES[level] .. " (r g b)",
-            show = function() return fmt(tint[1]) .. " " .. fmt(tint[2]) .. " " .. fmt(tint[3]) end,
-            parse = parseColour,
-            set = function(v) tint[1], tint[2], tint[3] = v[1], v[2], v[3] end,
-        }
+        local cells = {}
+        for c = 1, 3 do
+            cells[c] = {
+                show = function() return fmt(tint[c]) end,
+                parse = numberIn(0, 1),
+                set = function(v) tint[c] = v end,
+            }
+        end
+        rows[#rows + 1] = { label = "cor " .. ALERT_NAMES[level] .. " (r g b)", cells = cells }
     end
-    fields[#fields + 1] = {
-        label = "forcar alerta (0/1/2, -)",
+    rows[#rows + 1] = { label = "forcar alerta (0/1/2, -)", cells = { {
         show = function() return debug.forcedAlert and tostring(debug.forcedAlert) or "-" end,
         parse = parseForced,
         set = function(v) debug.forcedAlert = v or nil end,
-    }
-    return fields
+    } } }
+    return rows
 end
 
 local function snapshot(debug)
@@ -133,9 +127,9 @@ local fileValues = nil             -- the numbers before the first change of thi
 GENZ_ScrappyLightsTuner = ISCollapsableWindow:derive("GENZ_ScrappyLightsTuner")
 
 function GENZ_ScrappyLightsTuner:new(debug)
-    local fields = buildFields(debug)
+    local rows = buildRows(debug)
     local width = PAD * 3 + LABEL_W + ENTRY_W
-    local height = 20 + PAD + #fields * ROW + PAD + 2 * (ROW + 4) + PAD
+    local height = 20 + PAD + #rows * ROW + PAD + 2 * (ROW + 4) + PAD
     local x = getCore():getScreenWidth() - width - 20     -- top right corner: never over the dog
     local o = ISCollapsableWindow:new(x, 80, width, height)
     setmetatable(o, self)
@@ -143,22 +137,39 @@ function GENZ_ScrappyLightsTuner:new(debug)
     o.title = "Luzes do Scrappy (nao salva)"
     o.resizable = false
     o.debug = debug
-    o.fields = fields
+    o.rows = rows
     return o
+end
+
+-- Red label while any cell of the row is out of range, as the player types.
+local function onCellChanged(row, entry)
+    row.bad = false
+    for _, cell in ipairs(row.cells) do
+        if cell.parse(cell.entry:getText()) == nil then row.bad = true end
+    end
 end
 
 function GENZ_ScrappyLightsTuner:createChildren()
     ISCollapsableWindow.createChildren(self)
     local top = self:titleBarHeight() + PAD
     local entryX = PAD * 2 + LABEL_W
-    for i, field in ipairs(self.fields) do
-        local entry = ISTextEntryBox:new(field.show(), entryX, top + (i - 1) * ROW, ENTRY_W, ROW - 3)
-        entry:initialise()
-        entry:instantiate()
-        self:addChild(entry)
-        field.entry = entry
+    for i, row in ipairs(self.rows) do
+        local n = #row.cells
+        local cellW = (ENTRY_W - CELL_GAP * (n - 1)) / n
+        for c, cell in ipairs(row.cells) do
+            local entry = ISTextEntryBox:new(cell.show(), entryX + (c - 1) * (cellW + CELL_GAP),
+                top + (i - 1) * ROW, cellW, ROW - 3)
+            entry:initialise()
+            entry:instantiate()
+            entry:setOnlyNumbers(true)          -- digits, "." and "-" only (Core keyboard filter, 42.21)
+            entry:setMaxTextLength(MAX_CHARS)
+            entry.target = row
+            entry.onTextChangeFunction = onCellChanged
+            self:addChild(entry)
+            cell.entry = entry
+        end
     end
-    local buttonsY = top + #self.fields * ROW + PAD
+    local buttonsY = top + #self.rows * ROW + PAD
     local half = (self.width - PAD * 3) / 2
     self:makeButton(PAD, buttonsY, self.width - PAD * 2, "Aplicar", self.onApply)
     self:makeButton(PAD, buttonsY + ROW + 4, half, "Copiar bloco", self.onCopy)
@@ -176,32 +187,37 @@ end
 function GENZ_ScrappyLightsTuner:prerender()
     ISCollapsableWindow.prerender(self)
     local top = self:titleBarHeight() + PAD
-    for i, field in ipairs(self.fields) do
-        local bad = field == self.badField
-        self:drawText(field.label, PAD, top + (i - 1) * ROW + 2, 1, bad and 0.35 or 1, bad and 0.25 or 1, 1,
+    for i, row in ipairs(self.rows) do
+        self:drawText(row.label, PAD, top + (i - 1) * ROW + 2, 1, row.bad and 0.35 or 1, row.bad and 0.25 or 1, 1,
             UIFont.Small)
     end
 end
 
 function GENZ_ScrappyLightsTuner:refreshEntries()
-    for _, field in ipairs(self.fields) do field.entry:setText(field.show()) end
+    for _, row in ipairs(self.rows) do
+        row.bad = false
+        for _, cell in ipairs(row.cells) do cell.entry:setText(cell.show()) end
+    end
 end
 
--- All or nothing: one bad field stops the rest and is named in the chat (and painted red).
+-- All or nothing: one bad cell stops the rest and is named in the chat (and its row painted red).
 function GENZ_ScrappyLightsTuner:onApply()
     local values = {}
-    for i, field in ipairs(self.fields) do
-        local value, err = field.parse(field.entry:getText())
-        if value == nil then
-            self.badField = field
-            chatLine(field.label .. ": " .. err .. " -- nada aplicado", true)
-            return
+    for _, row in ipairs(self.rows) do
+        for _, cell in ipairs(row.cells) do
+            local value, err = cell.parse(cell.entry:getText())
+            if value == nil then
+                row.bad = true
+                chatLine(row.label .. ": " .. err .. " -- nada aplicado", true)
+                return
+            end
+            values[cell] = value
         end
-        values[i] = value
     end
-    self.badField = nil
     fileValues = fileValues or snapshot(self.debug)
-    for i, field in ipairs(self.fields) do field.set(values[i]) end
+    for _, row in ipairs(self.rows) do
+        for _, cell in ipairs(row.cells) do cell.set(values[cell]) end
+    end
     self.debug.refresh()
     self:refreshEntries()
     chatLine("aplicado")
@@ -234,7 +250,6 @@ function GENZ_ScrappyLightsTuner:onRestore()
     end
     self.debug.forcedAlert = nil
     self.debug.refresh()
-    self.badField = nil
     self:refreshEntries()
     chatLine("voltou ao arquivo")
 end
@@ -260,7 +275,7 @@ function GENZ_ScrappyLightsTuner.toggle()
     GENZ_ScrappyLightsTuner.instance = window
 end
 
--- Same chat wrap as the old /caixa (skill pz-ajuste-ao-vivo, "Comando de chat").
+-- Chat command wrap (skill pz-ajuste-ao-vivo, "Comando de chat").
 local function wrapChat()
     if not (ISChat and ISChat.onCommandEntered) or ISChat._genzScrappyLightsTuner then return end
     ISChat._genzScrappyLightsTuner = true
