@@ -84,6 +84,20 @@ local function giveXp(player, perkName, amount)
     addXp(player, Perks[perkName], amount)
 end
 
+-- Rolled AFTER the part is spent, like FixingManager.fixItem: Rand.Next(100) >= fail means success.
+local function rolledFailure(player, mode)
+    return ZombRand(100) < S.failPercent(player, mode)
+end
+
+-- The vanilla failed repair: the part is already gone, -1% condition, no XP.
+local function fail(player, dog, mode)
+    setCondition(dog, S.condition(dog) - S.FAILED_WEAR)
+    CompanionDogs.transmit(dog)
+    print("[GENZ_Scrappy] " .. tostring(player:getUsername()) .. " FAILED " .. mode .. " on Scrappy ("
+          .. S.failPercent(player, mode) .. "% chance) -> " .. math.floor(S.condition(dog) * 100 + 0.5) .. "%")
+    S.toOwner(player, "failed", { mode = mode })
+end
+
 local function calibrate(player, dog)
     if not consumeOne(player, S.CALIBRATION.part) then return false end
     local d = CompanionDogs.data(dog)
@@ -92,6 +106,10 @@ local function calibrate(player, dog)
         d.scrappyCalCount = 0
     end
     d.scrappyCalCount = d.scrappyCalCount + 1
+    if rolledFailure(player, S.CALIBRATE) then
+        fail(player, dog, S.CALIBRATE)
+        return true
+    end
     giveXp(player, S.CALIBRATION.perk, S.CALIBRATION.xp)
     CompanionDogs.transmit(dog)
     S.toOwner(player, "calibrated", { left = S.calibrationsLeft(dog) })
@@ -102,6 +120,10 @@ local function repair(player, dog, partType)
     local old = S.condition(dog)
     local gain = S.repairGain(player, partType)
     if not consumeOne(player, partType) then return false end
+    if rolledFailure(player, partType) then
+        fail(player, dog, partType)
+        return true
+    end
     setCondition(dog, old + gain)
     giveXp(player, S.REPAIRS[partType].perk, S.REPAIRS[partType].xp)
     if old <= 0 and not S.isOff(dog) then

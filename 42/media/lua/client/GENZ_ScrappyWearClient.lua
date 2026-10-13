@@ -20,6 +20,13 @@ local function disable(option, tipKey, ...)
     option.toolTip = tip
 end
 
+-- Same information the vanilla repair menu gives ("chance of success X%").
+local function showSuccessChance(option, playerObj, mode)
+    local tip = ISWorldObjectContextMenu.addToolTip()
+    tip:setName(getText("IGUI_Scrappy_SuccessChance", tostring(100 - S.failPercent(playerObj, mode)) .. "%"))
+    option.toolTip = tip
+end
+
 local function addRepairEntries(sub, playerObj, animal)
     for _, partType in ipairs(S.REPAIR_ORDER) do
         if playerObj:getInventory():containsTypeRecurse(partType) then
@@ -29,6 +36,8 @@ local function addRepairEntries(sub, playerObj, animal)
             local option = sub:addOption(label, animal, onMaintain, playerObj, partType)
             if S.condition(animal) >= 1 then
                 disable(option, "IGUI_Scrappy_FullCondition")
+            else
+                showSuccessChance(option, playerObj, partType)
             end
         end
     end
@@ -42,6 +51,8 @@ local function addCalibrateEntry(sub, playerObj, animal)
         disable(option, "IGUI_Scrappy_NoCalibrations")
     elseif not playerObj:getInventory():containsTypeRecurse(S.CALIBRATION.part) then
         disable(option, "IGUI_Scrappy_NeedsPart", getItemNameFromFullType("Base." .. S.CALIBRATION.part))
+    else
+        showSuccessChance(option, playerObj, S.CALIBRATE)
     end
 end
 
@@ -80,5 +91,11 @@ end
 
 S.clientHandlers.repaired = function(args) say(true, getText("IGUI_Scrappy_Repaired", tostring(args.pct) .. "%")) end
 S.clientHandlers.calibrated = function(args) say(true, getText("IGUI_Scrappy_Calibrated", tostring(args.left))) end
-S.clientHandlers.degraded = function() say(false, getText("IGUI_Scrappy_Degraded")) end
+S.clientHandlers.failed = function(args)
+    local player = getPlayer()
+    if player then player:playSound("FixingItemFailed") end
+    local key = args.mode == S.CALIBRATE and "IGUI_Scrappy_CalibrateFailed" or "IGUI_Scrappy_RepairFailed"
+    say(false, getText(key))
+end
+S.clientHandlers.degraded =function() say(false, getText("IGUI_Scrappy_Degraded")) end
 S.clientHandlers.broken = function() say(false, getText("IGUI_Scrappy_Broken")) end

@@ -51,15 +51,44 @@ S.DEGRADED_BELOW = 0.1   -- below this: no jewel loot, no XP aura; at 0 it break
 -- Maintenance is a training activity, modelled on the vanilla generator repair (ISFixGenerator: one
 -- ElectronicsScrap per cycle, +4% + Electricity level / 2, 5 XP, repeats until full). Scrappy pays double
 -- XP on Electricity on purpose: it is meant to be THE way to train it. Only a screwdriver is needed.
--- Parts by item TYPE (Base module): gain = base + perkLevel * perLevel (condition, 0..1); xp = perk XP.
+-- Parts by item TYPE (Base module): gain = base + perkLevel * perLevel (condition, 0..1); xp = perk XP;
+-- level = perk level below which the cycle starts to fail (see S.failPercent).
 S.REPAIRS = {
-    ElectronicsScrap = { perk = "Electricity", xp = 10, base = 0.04, perLevel = 0.005 },
-    ScrapMetal       = { perk = "MetalWelding", xp = 15, base = 0.02, perLevel = 0.0025 },
+    ElectronicsScrap = { perk = "Electricity", xp = 10, base = 0.04, perLevel = 0.005, level = 3 },
+    ScrapMetal       = { perk = "MetalWelding", xp = 15, base = 0.02, perLevel = 0.0025, level = 3 },
 }
 S.REPAIR_ORDER = { "ElectronicsScrap", "ScrapMetal" }
 -- "Calibrate circuits": Electricity training that does not need wear, a few times per in-game day.
 S.CALIBRATE = "calibrate"
-S.CALIBRATION = { part = "ElectronicsScrap", perk = "Electricity", xp = 10, perDay = 3 }
+S.CALIBRATION = { part = "ElectronicsScrap", perk = "Electricity", xp = 10, perDay = 3, level = 3 }
+
+-- FAILURE, copied from the vanilla item repair (FixingManager.getChanceOfFail, decompiled 42.21): 3%, +30%
+-- per level missing, -5% per level above, clamped 0..100. Vanilla also adds +2% per earlier repair of the
+-- item; left out here, a dog repaired every few days would end up never repairable. A failed cycle does
+-- what the vanilla one does: the part is spent, -1% condition, no XP.
+S.FAIL_BASE = 3
+S.FAIL_PER_MISSING_LEVEL = 30
+S.FAIL_PER_EXTRA_LEVEL = 5
+S.FAILED_WEAR = 0.01
+
+-- What one maintenance mode spends and trains: a REPAIRS entry, or CALIBRATION.
+function S.maintenanceRule(mode)
+    if mode == S.CALIBRATE then return S.CALIBRATION end
+    return S.REPAIRS[mode]
+end
+
+-- Chance, 0..100, that one cycle of `mode` fails for this player.
+function S.failPercent(player, mode)
+    local rule = S.maintenanceRule(mode)
+    local diff = player:getPerkLevel(Perks[rule.perk]) - rule.level
+    local percent = S.FAIL_BASE
+    if diff < 0 then
+        percent = percent - diff * S.FAIL_PER_MISSING_LEVEL
+    else
+        percent = percent - diff * S.FAIL_PER_EXTRA_LEVEL
+    end
+    return math.max(0, math.min(100, percent))
+end
 
 function S.condition(animal)
     local value = CompanionDogs.data(animal).scrappyCondition
