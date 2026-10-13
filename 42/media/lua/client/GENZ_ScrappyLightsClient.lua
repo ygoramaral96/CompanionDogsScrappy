@@ -6,6 +6,8 @@
 --   engine only builds real cone lights (TorchInfo) for players and car lamps (LightingJNI, 42.21), so
 --   the "cone" is two point lights (IsoLightSource, as in GENZ_MascoteGlow): one on the head's square,
 --   one further ahead. Lights snap to squares and exist only on clients (a dedicated server has none).
+--   WEAR: below the condition that stops the loot and the XP aura (S.degradedBelow, sandbox
+--   WorkingThreshold) the front light fades with the condition, in LIGHT_STEPS steps, and goes out at 0.
 -- Purely VISUAL and LOCAL: AnimalVisual's skin name is written with the animal (AnimalVisual.save,
 -- decompiled 42.21), so the server never changes it -- every client paints what it sees from the
 -- scrappyOff flag the server already transmits.
@@ -18,11 +20,13 @@ local SKIN_EVERY_TICKS = 30        -- about half a second: a shutdown shows almo
 local LIGHT_EVERY_TICKS = 5        -- the light keeps up with a running dog
 -- ahead = squares from the body centre; radius in squares; colour 0..1 (above 1 bleaches to white,
 -- GENZ_MascoteGlow). The visor line is already at ~85% of white (the shader cannot go further), so the
--- head light is what makes the eyes read strong: it lights the dog's own face and the ground lime.
+-- light is what makes the eyes read strong. Tested 13/10: a radius-2 head light painted the whole dog
+-- green -- the head light stays small and faint, the beam ahead carries the colour.
 local FRONT_LIGHTS = {
-    { ahead = 0.6, radius = 2, r = 0.30, g = 0.90, b = 0.10 },   -- the head, where the eyes are
-    { ahead = 2.5, radius = 2, r = 0.15, g = 0.45, b = 0.04 },   -- fainter, where it looks
+    { ahead = 0.6, radius = 1, r = 0.15, g = 0.45, b = 0.05 },   -- the head, where the eyes are
+    { ahead = 2.5, radius = 2, r = 0.25, g = 0.75, b = 0.08 },   -- where it looks
 }
+local LIGHT_STEPS = 10             -- the fade changes in 10% steps: a light is recreated only per step
 
 local lightsByDog = {}             -- [animal] = { { src, x, y, z }, ... } one per FRONT_LIGHTS entry
 
@@ -48,9 +52,18 @@ local function removeLights(cell, animal)
     lightsByDog[animal] = nil
 end
 
--- A light is recreated only when its square changes: one per square, never one per frame (a new
+-- 1 while the condition is at or above the working threshold; below it, the share of the threshold
+-- left, rounded to LIGHT_STEPS; 0 when broken.
+local function lightLevel(animal)
+    local threshold = S.degradedBelow()
+    local condition = S.condition(animal)
+    if threshold <= 0 or condition >= threshold then return 1 end
+    return math.floor(condition / threshold * LIGHT_STEPS + 0.5) / LIGHT_STEPS
+end
+
+-- A light is recreated only when its square or its level changes, never every frame (a new
 -- IsoLightSource every frame leaks, pz-b42-modding 04 (c)).
-local function placeLights(cell, animal)
+local function placeLights(cell, animal, level)
     local fx, fy = animal:getForwardDirectionX(), animal:getForwardDirectionY()
     local z = math.floor(animal:getZ())
     local lights = lightsByDog[animal] or {}
@@ -58,11 +71,11 @@ local function placeLights(cell, animal)
         local x = math.floor(animal:getX() + fx * spec.ahead)
         local y = math.floor(animal:getY() + fy * spec.ahead)
         local light = lights[i]
-        if not light or light.x ~= x or light.y ~= y or light.z ~= z then
+        if not light or light.x ~= x or light.y ~= y or light.z ~= z or light.level ~= level then
             if light then cell:removeLamppost(light.src) end
-            local src = IsoLightSource.new(x, y, z, spec.r, spec.g, spec.b, spec.radius)
+            local src = IsoLightSource.new(x, y, z, spec.r * level, spec.g * level, spec.b * level, spec.radius)
             cell:addLamppost(src)
-            lights[i] = { src = src, x = x, y = y, z = z }
+            lights[i] = { src = src, x = x, y = y, z = z, level = level }
         end
     end
     lightsByDog[animal] = lights
@@ -86,14 +99,15 @@ Events.OnTick.Add(function()
         local animal = animals:get(i)
         if isLiveScrappy(animal) then
             if doSkin then syncSkin(animal) end
-            if doLights and not S.isOff(animal) then
-                placeLights(cell, animal)
+            local level = doLights and not S.isOff(animal) and lightLevel(animal) or 0
+            if level > 0 then
+                placeLights(cell, animal, level)
                 lit[animal] = true
             end
         end
     end
     if not doLights then return end
-    -- shut down, dead, picked up or out of the cell: its lights go
+    -- shut down, broken, dead, picked up or out of the cell: its lights go
     local gone = {}
     for animal in pairs(lightsByDog) do
         if not lit[animal] then gone[#gone + 1] = animal end
