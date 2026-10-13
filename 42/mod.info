@@ -5,4 +5,4 @@ modversion=0.1.0
 require=CompanionDogs,GENZ_Equipamentos
 pzversion=42.19.0
 versionMin=42.18.0
-description=Scrappy, a mechanical companion dog for Companion Dogs (card #246). Prototype: the body is a placeholder mesh skinned onto the Companion Dogs German Shepherd skeleton and animations, used under the author's add-on policy (credit: Companion Dogs by its author). Placeholder art, not for publication. Do not remove this add-on from a save with a living Scrappy.
+description=Scrappy, o cao de sucata: cao-robo companheiro do Companion Dogs. Arranca as joias dos zumbis que morrem perto dele, tem compartimento de carga embutido (uma caixa de metal aparece nas costas quando ha carga), da +20% de XP em Eletrica e Soldagem a quem trabalha perto, funciona a bateria (pilha ou bateria de carro) em vez de comida, se desgasta e precisa de conserto, e o olho e a lanterna mudam de verde para ambar e vermelho quando os zumbis chegam. Nao se reproduz. Modelo proprio sobre o esqueleto e as animacoes do Pastor Alemao do Companion Dogs, usados pela politica de add-on do autor (credito: Companion Dogs e seu autor). Nao remova este mod de um save com um Scrappy vivo.
