@@ -13,7 +13,7 @@
     "IGUI_Scrappy_TooFar": "Chegue mais perto do Scrappy",
     "IGUI_Scrappy_Maintain": "Manutenção do Scrappy (condição %1)",
     "IGUI_Scrappy_NoScrewdriver": "Precisa de chave de fenda",
-    "IGUI_Scrappy_NoParts": "Precisa de sucata eletrônica ou sucata de metal",
+    "IGUI_Scrappy_NeedsPart": "Precisa de %1",
     "IGUI_Scrappy_Repaired": "Scrappy consertado: %1",
     "IGUI_Scrappy_FullCondition": "Scrappy já está em perfeito estado",
     "IGUI_Scrappy_RepairWith": "%1 (+%2, %3 XP)",

@@ -13,7 +13,7 @@
     "IGUI_Scrappy_TooFar": "Get closer to Scrappy",
     "IGUI_Scrappy_Maintain": "Scrappy maintenance (condition %1)",
     "IGUI_Scrappy_NoScrewdriver": "Needs a screwdriver",
-    "IGUI_Scrappy_NoParts": "Needs electronics scrap or scrap metal",
+    "IGUI_Scrappy_NeedsPart": "Needs %1",
     "IGUI_Scrappy_Repaired": "Scrappy repaired: %1",
     "IGUI_Scrappy_FullCondition": "Scrappy is already in perfect shape",
     "IGUI_Scrappy_RepairWith": "%1 (+%2, %3 XP)",

@@ -13,10 +13,10 @@ local function onMaintain(animal, playerObj, mode)
     ISTimedActionQueue.add(GENZ_ScrappyMaintainAction:new(playerObj, animal, mode))
 end
 
-local function disable(option, tipKey)
+local function disable(option, tipKey, ...)
     option.notAvailable = true
     local tip = ISWorldObjectContextMenu.addToolTip()
-    tip:setName(getText(tipKey))
+    tip:setName(getText(tipKey, ...))
     option.toolTip = tip
 end
 
@@ -41,7 +41,7 @@ local function addCalibrateEntry(sub, playerObj, animal)
     if left <= 0 then
         disable(option, "IGUI_Scrappy_NoCalibrations")
     elseif not playerObj:getInventory():containsTypeRecurse(S.CALIBRATION.part) then
-        disable(option, "IGUI_Scrappy_NoParts")
+        disable(option, "IGUI_Scrappy_NeedsPart", getItemNameFromFullType("Base." .. S.CALIBRATION.part))
     end
 end
 
