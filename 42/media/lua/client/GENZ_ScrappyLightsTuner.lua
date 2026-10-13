@@ -1,7 +1,7 @@
 -- Scrappy lights tuner, DEBUG ONLY (card #246, skill pz-ajuste-ao-vivo): a small native window, opened and
 -- closed by the chat command /scrappy_luzes, that edits the head light, the beam and the alert colours of
 -- GENZ_ScrappyLightsClient live (through S.lightsDebug). Type the values, press Aplicar.
---   Copiar bloco  -> the numbers, as they go in the .lua, in the chat and in console.txt
+--   Copiar bloco  -> the numbers, as they go in the .lua, in the chat, in console.txt and on the clipboard
 --   Voltar ao arquivo -> the numbers the game started with
 -- Fields take only digits, "." and "-" (setOnlyNumbers) and turn red while out of range. Nothing is saved:
 -- reopening the game goes back to the file. Stays in the mod for later tests (Ygor, 13/10).
@@ -36,6 +36,14 @@ local function chatLine(text, isError)
         setShouldAttractZombies = function() return false end,
         setOverHeadSpeech = function() return false end,
     }, 0)
+end
+
+-- Each line to the chat (and console), and the whole block to the clipboard: Ctrl+V pastes it
+-- (zombie.core.Clipboard, exposed to Lua -- LuaManager 42.21).
+local function copyBlock(lines)
+    for _, line in ipairs(lines) do chatLine(line) end
+    Clipboard.setClipboard(table.concat(lines, "\n"))
+    chatLine("copiado: Ctrl+V cola o bloco")
 end
 
 -- %.3f without trailing zeros (%.Nf is proven in Kahlua; %g is not relied on)
@@ -228,17 +236,20 @@ end
 
 function GENZ_ScrappyLightsTuner:onCopy()
     local head, beam = self.debug.head, self.debug.beam
-    chatLine("local HEAD_LIGHT = { ahead = " .. fmt(head.ahead) .. ", side = " .. fmt(head.side)
-        .. ", radius = " .. fmt(head.radius) .. ", strength = " .. fmt(head.strength) .. " }")
-    chatLine("BEAM: count = " .. fmt(beam.count) .. ", start = " .. fmt(beam.start) .. ", spacing = "
-        .. fmt(beam.spacing) .. ",")
-    chatLine("      radius = " .. fmt(beam.radius) .. ", radiusGrow = " .. fmt(beam.radiusGrow) .. ",")
-    chatLine("      strengthNear = " .. fmt(beam.strengthNear) .. ", strengthFar = " .. fmt(beam.strengthFar) .. ",")
+    local lines = {
+        "local HEAD_LIGHT = { ahead = " .. fmt(head.ahead) .. ", side = " .. fmt(head.side)
+            .. ", radius = " .. fmt(head.radius) .. ", strength = " .. fmt(head.strength) .. " }",
+        "BEAM: count = " .. fmt(beam.count) .. ", start = " .. fmt(beam.start) .. ", spacing = "
+            .. fmt(beam.spacing) .. ",",
+        "      radius = " .. fmt(beam.radius) .. ", radiusGrow = " .. fmt(beam.radiusGrow) .. ",",
+        "      strengthNear = " .. fmt(beam.strengthNear) .. ", strengthFar = " .. fmt(beam.strengthFar) .. ",",
+    }
     for level = 0, 2 do
         local t = self.debug.alert[level].tint
-        chatLine(string.format("[%d] tint = { %.2f, %.2f, %.2f },  -- %s", level, t[1], t[2], t[3],
-            ALERT_NAMES[level]))
+        lines[#lines + 1] = string.format("[%d] tint = { %.2f, %.2f, %.2f },  -- %s", level, t[1], t[2], t[3],
+            ALERT_NAMES[level])
     end
+    copyBlock(lines)
 end
 
 function GENZ_ScrappyLightsTuner:onRestore()

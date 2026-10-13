@@ -1,7 +1,8 @@
 -- Scrappy cargo-case tuner, DEBUG ONLY (card #246, skill pz-ajuste-ao-vivo): a small native window, opened
 -- and closed by the chat command /scrappy_caixa, that edits the saddlebags_c attachment of Scrappy_Body live --
 -- offset, rotate, scale and the BONE it hangs from (a list of the dog's bones). Type, press Aplicar.
---   Copiar bloco  -> the attachment block, as it goes in models_scrappy.txt, in the chat and in console.txt
+--   Copiar bloco  -> the attachment block, as it goes in models_scrappy.txt, in the chat, in console.txt and
+--                    on the clipboard
 --   Voltar ao arquivo -> the numbers the game started with
 -- Fields take only digits, "." and "-" (setOnlyNumbers) and turn red while out of range. Nothing is saved:
 -- reopening the game goes back to the file. Stays in the mod for later tests (Ygor, 13/10).
@@ -47,6 +48,14 @@ local function chatLine(text, isError)
         setShouldAttractZombies = function() return false end,
         setOverHeadSpeech = function() return false end,
     }, 0)
+end
+
+-- Each line to the chat (and console), and the whole block to the clipboard: Ctrl+V pastes it
+-- (zombie.core.Clipboard, exposed to Lua -- LuaManager 42.21).
+local function copyBlock(lines)
+    for _, line in ipairs(lines) do chatLine(line) end
+    Clipboard.setClipboard(table.concat(lines, "\n"))
+    chatLine("copiado: Ctrl+V cola o bloco")
 end
 
 -- %.4f without trailing zeros (%.Nf is proven in Kahlua; %g is not relied on)
@@ -223,12 +232,14 @@ end
 
 function GENZ_ScrappyCargoTuner:onCopy()
     local o, r = self.attach:getOffset(), self.attach:getRotate()
-    chatLine("attachment " .. ATTACHMENT .. " {")
-    chatLine("    offset = " .. fmt(o:x()) .. " " .. fmt(o:y()) .. " " .. fmt(o:z()) .. ",")
-    chatLine("    rotate = " .. fmt(r:x()) .. " " .. fmt(r:y()) .. " " .. fmt(r:z()) .. ",")
-    chatLine("    scale = " .. fmt(self.attach:getScale()) .. ",")
-    chatLine("    bone = " .. self.attach:getBone() .. ",")
-    chatLine("}")
+    copyBlock({
+        "attachment " .. ATTACHMENT .. " {",
+        "    offset = " .. fmt(o:x()) .. " " .. fmt(o:y()) .. " " .. fmt(o:z()) .. ",",
+        "    rotate = " .. fmt(r:x()) .. " " .. fmt(r:y()) .. " " .. fmt(r:z()) .. ",",
+        "    scale = " .. fmt(self.attach:getScale()) .. ",",
+        "    bone = " .. self.attach:getBone() .. ",",
+        "}",
+    })
 end
 
 function GENZ_ScrappyCargoTuner:onRestore()
