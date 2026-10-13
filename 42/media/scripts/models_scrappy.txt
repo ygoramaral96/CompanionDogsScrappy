@@ -3,11 +3,13 @@ module Base
     /* Scrappy body. The GLB keeps the German Shepherd skeleton and its 20 Rac_* clips byte for
        byte (only mesh, skin weights, inverse bind and texture were replaced), so the attachment
        offsets below are the German Shepherd's: same bones, same bind skeleton. GLB = scale 1.0
-       (pz-b42-modding §195). */
+       (pz-b42-modding §195).
+       Shader: animalEffect + neon on the lime (eyes, flank screen); GENZ_ScrappyLightsClient swaps to
+       ScrappyOff.png (no lime) when it shuts down. Ruler: scripts/scrappy/checar_scrappy_neon.py */
     model Scrappy_Body
     {
         mesh = Skinned/Scrappy_Body,
-        shader = animalEffect,
+        shader = genz_scrappy_neon,
         static = false,
         animationsMesh = ScrappyAnim,
         attachment head
