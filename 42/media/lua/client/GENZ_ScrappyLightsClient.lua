@@ -36,18 +36,25 @@ local ALERT = {
     [1] = { skin = "Amber", tint = { 1.00, 0.55, 0.05 } },   -- some zombies near
     [2] = { skin = "Red", tint = { 1.00, 0.10, 0.06 } },     -- many zombies near
 }
--- ahead = squares from the body centre; radius in squares; strength scales the alert colour. The visor
+-- ahead = squares from the body centre along where it looks; side = squares to its right (negative: left);
+-- radius in whole squares; strength scales the alert colour. Lights snap to squares (IsoLightSource takes
+-- ints), so ahead/side below a square only matter where they cross one. The visor
 -- line is already at ~85% of white (the shader cannot go further), so the light is what makes the eyes
 -- read strong. Tested 13/10: a radius-2 head light painted the whole dog green -- the head light stays
 -- small and faint, the beam ahead carries the colour.
 local FRONT_LIGHTS = {
-    { ahead = 0.6, radius = 1, strength = 0.45 },   -- the head, where the eyes are
-    { ahead = 2.5, radius = 2, strength = 0.75 },   -- where it looks
+    { ahead = 0.6, side = 0, radius = 1, strength = 0.45 },   -- the head, where the eyes are
+    { ahead = 2.5, side = 0, radius = 2, strength = 0.75 },   -- where it looks
 }
 local LIGHT_STEPS = 10             -- the fade changes in 10% steps: a light is recreated only per step
 
 local lightsByDog = {}             -- [animal] = { { src, x, y, z, level, alert }, ... } per FRONT_LIGHTS
 local alertByDog = {}              -- [animal] = { level, since } (since = last time this level was seen)
+
+-- Door for the debug tuner (GENZ_ScrappyLightsTuner, debug only): it edits FRONT_LIGHTS and the ALERT tints
+-- in place, may force an alert level, and calls refresh() so every light is rebuilt with the new numbers.
+-- Nobody else writes here; forcedAlert stays nil outside a debug session.
+S.lightsDebug = { front = FRONT_LIGHTS, alert = ALERT, forcedAlert = nil }
 
 local function zombiesNear(animal)
     local radius = CompanionDogs.ZOMBIE_ATTACK_RADIUS
@@ -74,7 +81,7 @@ end
 -- Up at once, down only after ALERT_HOLD_MS without the higher level.
 local function updateAlert(animal)
     local now = getTimestampMs()
-    local raw = rawAlert(animal)
+    local raw = S.lightsDebug.forcedAlert or rawAlert(animal)
     local state = alertByDog[animal]
     if not state or raw >= state.level then
         alertByDog[animal] = { level = raw, since = now }
@@ -116,6 +123,15 @@ local function removeLights(cell, animal)
     lightsByDog[animal] = nil
 end
 
+-- Drop every light; the next light pass rebuilds them from FRONT_LIGHTS/ALERT as they are now.
+function S.lightsDebug.refresh()
+    local cell = getCell()
+    if not cell then return end
+    local dogs = {}
+    for animal in pairs(lightsByDog) do dogs[#dogs + 1] = animal end
+    for _, animal in ipairs(dogs) do removeLights(cell, animal) end
+end
+
 -- 1 at or above the threshold; below it, the share of the threshold left.
 local function fade(value, threshold)
     if threshold <= 0 or value >= threshold then return 1 end
@@ -138,8 +154,9 @@ local function placeLights(cell, animal, level)
     local tint = ALERT[alert].tint
     local lights = lightsByDog[animal] or {}
     for i, spec in ipairs(FRONT_LIGHTS) do
-        local x = math.floor(animal:getX() + fx * spec.ahead)
-        local y = math.floor(animal:getY() + fy * spec.ahead)
+        -- right of the facing (fx, fy) is (-fy, fx) in PZ's y-down world
+        local x = math.floor(animal:getX() + fx * spec.ahead - fy * spec.side)
+        local y = math.floor(animal:getY() + fy * spec.ahead + fx * spec.side)
         local light = lights[i]
         if not light or light.x ~= x or light.y ~= y or light.z ~= z or light.level ~= level
                 or light.alert ~= alert then
