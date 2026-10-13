@@ -6,8 +6,9 @@
 --   engine only builds real cone lights (TorchInfo) for players and car lamps (LightingJNI, 42.21), so
 --   the "cone" is two point lights (IsoLightSource, as in GENZ_MascoteGlow): one on the head's square,
 --   one further ahead. Lights snap to squares and exist only on clients (a dedicated server has none).
---   WEAR: below the condition that stops the loot and the XP aura (S.degradedBelow, sandbox
---   WorkingThreshold) the front light fades with the condition, in LIGHT_STEPS steps, and goes out at 0.
+--   WEAR AND CHARGE: below the sandbox WorkingThreshold (S.degradedBelow -- the condition under which
+--   the loot and the XP aura stop), the front light fades with the condition AND with the battery
+--   charge, following the lower of the two, in LIGHT_STEPS steps; it goes out at 0 (Ygor, 13/10).
 -- Purely VISUAL and LOCAL: AnimalVisual's skin name is written with the animal (AnimalVisual.save,
 -- decompiled 42.21), so the server never changes it -- every client paints what it sees from the
 -- scrappyOff flag the server already transmits.
@@ -52,13 +53,17 @@ local function removeLights(cell, animal)
     lightsByDog[animal] = nil
 end
 
--- 1 while the condition is at or above the working threshold; below it, the share of the threshold
--- left, rounded to LIGHT_STEPS; 0 when broken.
+-- 1 at or above the threshold; below it, the share of the threshold left.
+local function fade(value, threshold)
+    if threshold <= 0 or value >= threshold then return 1 end
+    return value / threshold
+end
+
+-- The weaker of condition and charge, rounded to LIGHT_STEPS; 0 when broken or empty.
 local function lightLevel(animal)
     local threshold = S.degradedBelow()
-    local condition = S.condition(animal)
-    if threshold <= 0 or condition >= threshold then return 1 end
-    return math.floor(condition / threshold * LIGHT_STEPS + 0.5) / LIGHT_STEPS
+    local level = math.min(fade(S.condition(animal), threshold), fade(S.chargeFraction(animal), threshold))
+    return math.floor(level * LIGHT_STEPS + 0.5) / LIGHT_STEPS
 end
 
 -- A light is recreated only when its square or its level changes, never every frame (a new
@@ -85,9 +90,9 @@ end
 local probeLast = {}
 local function probeLight(animal)
     local d = CompanionDogs.data(animal)
-    local line = string.format("off=%s scrappyOff=%s cond=%s threshold=%s level=%s",
+    local line = string.format("off=%s scrappyOff=%s cond=%s charge=%s threshold=%s level=%s",
         tostring(S.isOff(animal)), tostring(d.scrappyOff), tostring(d.scrappyCondition),
-        tostring(S.degradedBelow()), tostring(lightLevel(animal)))
+        tostring(S.chargeFraction(animal)), tostring(S.degradedBelow()), tostring(lightLevel(animal)))
     if probeLast[animal] == line then return end
     probeLast[animal] = line
     print("[GENZ_card246] light " .. line)
