@@ -12,7 +12,7 @@ local function chargersIn(playerObj)
     local items = playerObj:getInventory():getItems()
     for i = 0, items:size() - 1 do
         local item = items:get(i)
-        if S.chargeOf(item:getFullType()) > 0 and item:getCurrentUsesFloat() > 0 then
+        if S.CHARGERS[item:getFullType()] and item:getCurrentUsesFloat() > 0 then
             found[#found + 1] = item
         end
     end

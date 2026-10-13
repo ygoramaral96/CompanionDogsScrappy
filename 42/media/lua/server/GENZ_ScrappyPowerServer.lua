@@ -101,8 +101,8 @@ local function recharge(player, args)
         return
     end
     local item = args.itemId and player:getInventory():getItemById(tonumber(args.itemId))
-    local value = item and S.chargeOf(item:getFullType()) or 0
-    if value <= 0 then return end
+    local value = item and S.CHARGERS[item:getFullType()]
+    if not value then return end
     local uses = item:getCurrentUsesFloat()
     if uses <= 0 then return end
 

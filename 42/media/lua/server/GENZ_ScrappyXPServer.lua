@@ -1,5 +1,5 @@
 -- Scrappy XP aura (card #246): while the owner has their Scrappy close by -- switched on and loyal --
--- Electricity and Metal Welding XP is worth sandbox AuraMultiplier times as much.
+-- Electricity and Metal Welding XP is worth XP_MULT times as much.
 --
 -- Same shape as the base mod's breed bonuses (CompanionDogs_XPBoost), on purpose:
 --   * granted as EXTRA XP inside Events.AddXP, which the engine fires on the server and in single player;
@@ -12,7 +12,7 @@ if isClient() and not isServer() then return end
 require "GENZ_ScrappyShared"
 local S = GENZ_Scrappy
 
--- Sandbox AuraMultiplier (default 1.2, the Golden Retriever's and the Border Collie's), read per XP event.
+local XP_MULT = 1.2   -- same as the Golden Retriever and the Border Collie
 
 local boostedPerks
 local granting = false
@@ -41,9 +41,8 @@ local function onAddXP(chr, perk, amount)
     local xp = chr:getXp()
     local book = xp:getMultiplier(perk)
     if book < 1 then book = 1 end
-    local mult = S.opt("AuraMultiplier")
-    if mult <= book then return end
-    local bonus = amount * (mult / book - 1)
+    if XP_MULT <= book then return end
+    local bonus = amount * (XP_MULT / book - 1)
     granting = true
     xp:AddXP(perk, bonus, false, false, false)
     granting = false
@@ -61,6 +60,6 @@ Events.OnGameBoot.Add(function()
     end
     boostedPerks = { [Perks.Electricity] = true, [Perks.MetalWelding] = true }
     Events.AddXP.Add(onAddXP)
-    print("[GENZ_Scrappy] XP aura on: Electricity and MetalWelding x(sandbox AuraMultiplier)"
+    print("[GENZ_Scrappy] XP aura on: Electricity and MetalWelding x" .. XP_MULT
           .. " within " .. CD.moodleHappyRadius() .. " tiles")
 end)
