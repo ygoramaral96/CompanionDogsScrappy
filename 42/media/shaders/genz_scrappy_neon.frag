@@ -5,7 +5,9 @@
 //   LIME  (visor, Scrappy.png, on)        -> strong green glow: key and numbers = genz_neon_bestiario
 //                                            (pz-b42-modding section 202), without the rim (the animal
 //                                            .vert does not output vertNormalClip)
-//   RED   (visor, ScrappyOff.png, off)    -> much weaker red glow (GENZ_R_FORCA)
+//   RED   (visor: alert / shut down)     -> the bright alert red glows as strong as the lime;
+//                                            ScrappyOff.png paints a DARKER red (value 0.62), which this
+//                                            key only half-passes: ~0.35, the old shut-down glow
 //   AMBER (4 back lamps, Scrappy.png, on) -> amber glow; ScrappyOff.png paints them dark
 // checar_scrappy_neon.py reads these #defines and counts what each texture lights.
 #define GENZ_B_FORCA   1.60
@@ -23,7 +25,7 @@
 #define GENZ_B_VAL_LO  0.30
 #define GENZ_B_VAL_HI  0.55
 // red key: r over the larger of g/b well past the amber shoulder lamps (r/g ~1.7), saturated, bright
-#define GENZ_R_FORCA   0.35
+#define GENZ_R_FORCA   1.60
 #define GENZ_R_COR     vec3(1.00, 0.10, 0.06)
 #define GENZ_R_DOM_LO  3.00
 #define GENZ_R_DOM_HI  5.00
