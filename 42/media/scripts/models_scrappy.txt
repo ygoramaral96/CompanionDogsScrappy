@@ -4,8 +4,11 @@ module Base
        byte (only mesh, skin weights, inverse bind and texture were replaced), so the attachment
        offsets below are the German Shepherd's: same bones, same bind skeleton. GLB = scale 1.0
        (pz-b42-modding §195).
-       Shader: animalEffect + neon on the lime (eyes, flank screen); GENZ_ScrappyLightsClient swaps to
-       ScrappyOff.png (no lime) when it shuts down. Ruler: scripts/scrappy/checar_scrappy_neon.py */
+       Shader: animalEffect + neon on the eye visor line (lime glows strong, red weak);
+       GENZ_ScrappyLightsClient swaps to ScrappyOff.png (red line) when it shuts down.
+       Ruler: scripts/scrappy/checar_scrappy_neon.py
+       saddlebags_l/_r stay empty on Scrappy (built-in bag); saddlebags_c carries the ammo case
+       (GENZ_ScrappyCargoBox) while the bag holds something -- FIRST GUESS, tune in game. */
     model Scrappy_Body
     {
         mesh = Skinned/Scrappy_Body,
@@ -35,8 +38,8 @@ module Base
         attachment saddlebags_c
         {
             offset = 0.0 0.04 -0.03,
-            rotate = 90.0 90.0 0.0,
-            scale = 0.35,
+            rotate = 0.0 -90.0 90.0,
+            scale = 1.0,
             bone = Spine_03,
         }
     }

@@ -1,0 +1,15 @@
+module Base
+{
+    /* Scrappy's cargo case, VISUAL only (card #246): the vanilla ammo case hung on the saddlebags_c point
+       of Scrappy_Body while its built-in bag holds something (GENZ_ScrappyCargoClient). Never crafted,
+       looted or used -- same role as CompanionDogs' CompanionDogsSaddlebagStrap. */
+    item GENZ_ScrappyCargoBox
+    {
+        DisplayCategory = Animal,
+        ItemType = base:normal,
+        Weight = 0.1,
+        Icon = AmmoCase,
+        StaticModel = AmmoBox_Ground,
+        WorldStaticModel = AmmoBox_Ground,
+    }
+}

@@ -22,5 +22,6 @@
     "IGUI_Scrappy_Calibrated": "Circuits calibrated (%1 left today)",
     "IGUI_Scrappy_Degraded": "Scrappy is worn out: no more jewel picking or XP help until maintenance",
     "IGUI_Scrappy_Broken": "Scrappy broke down: it needs maintenance",
-    "IGUI_PD_BreedDesc_scrappy": "A mechanical dog built from salvage. It fights like an ordinary companion, carries more in its saddlebag than any other breed, and plucks jewelry off the zombies you drop. Working alongside it sharpens your Electricity and Metal Welding. It cannot be bred."
+    "IGUI_PD_BreedDesc_scrappy": "A mechanical dog built from salvage. It fights like an ordinary companion, carries more in its saddlebag than any other breed, and plucks jewelry off the zombies you drop. Working alongside it sharpens your Electricity and Metal Welding. It cannot be bred.",
+    "IGUI_Scrappy_BuiltInBag": "Scrappy already has a built-in cargo compartment"
 }
