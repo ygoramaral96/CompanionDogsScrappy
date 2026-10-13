@@ -97,5 +97,5 @@ S.clientHandlers.failed = function(args)
     local key = args.mode == S.CALIBRATE and "IGUI_Scrappy_CalibrateFailed" or "IGUI_Scrappy_RepairFailed"
     say(false, getText(key))
 end
-S.clientHandlers.degraded =function() say(false, getText("IGUI_Scrappy_Degraded")) end
+S.clientHandlers.degraded = function() say(false, getText("IGUI_Scrappy_Degraded")) end
 S.clientHandlers.broken = function() say(false, getText("IGUI_Scrappy_Broken")) end
