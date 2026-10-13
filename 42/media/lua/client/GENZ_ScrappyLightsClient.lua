@@ -1,6 +1,7 @@
 -- Scrappy lights, client side (card #246).
---   EYES: switched on, it wears Scrappy.png, whose lime visor line glows through genz_scrappy_neon; shut
---   down, it wears ScrappyOff.png (red line), which the same shader lights much weaker.
+--   EYES AND BACK LAMPS: switched on, it wears Scrappy.png -- lime visor line and 4 amber back lamps,
+--   both glowing through genz_scrappy_neon (the lamps throw no light on the world); shut down, it wears
+--   ScrappyOff.png -- red visor line (much weaker glow) and dark lamps.
 --   FRONT LIGHT: switched on, a dim lime light starts on its head and reaches ahead where it looks. The
 --   engine only builds real cone lights (TorchInfo) for players and car lamps (LightingJNI, 42.21), so
 --   the "cone" is two point lights (IsoLightSource, as in GENZ_MascoteGlow): one on the head's square,

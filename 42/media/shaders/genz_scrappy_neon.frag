@@ -1,12 +1,13 @@
 #version 110
 
-// GENZ Scrappy neon (card #246) -- vanilla animalEffect.frag + two glow keys on the eye visor.
+// GENZ Scrappy neon (card #246) -- vanilla animalEffect.frag + three glow keys.
 // The .vert is animalEffect.vert byte for byte (skinning untouched).
-//   LIME (Scrappy.png, switched on)   -> strong green glow: key and numbers = genz_neon_bestiario
-//                                        (pz-b42-modding section 202), without the rim (the animal
-//                                        .vert does not output vertNormalClip)
-//   RED  (ScrappyOff.png, shut down)  -> much weaker red glow (GENZ_R_FORCA)
-// checar_scrappy_neon.py reads these #defines and checks that each texture lights only the visor.
+//   LIME  (visor, Scrappy.png, on)        -> strong green glow: key and numbers = genz_neon_bestiario
+//                                            (pz-b42-modding section 202), without the rim (the animal
+//                                            .vert does not output vertNormalClip)
+//   RED   (visor, ScrappyOff.png, off)    -> much weaker red glow (GENZ_R_FORCA)
+//   AMBER (4 back lamps, Scrappy.png, on) -> amber glow; ScrappyOff.png paints them dark
+// checar_scrappy_neon.py reads these #defines and counts what each texture lights.
 #define GENZ_B_FORCA   1.60
 #define GENZ_B_COR     vec3(0.55, 1.00, 0.04)
 #define GENZ_B_COR_NUC vec3(0.55, 1.00, 0.92)
@@ -29,6 +30,15 @@
 #define GENZ_R_SAT     0.70
 #define GENZ_R_VAL_LO  0.50
 #define GENZ_R_VAL_HI  0.80
+// amber key: g/r inside an orange window (lime is > 1, the red visor 0.08), little blue, saturated, bright
+#define GENZ_A_FORCA   1.20
+#define GENZ_A_COR     vec3(1.00, 0.55, 0.05)
+#define GENZ_A_GR_LO   0.40
+#define GENZ_A_GR_HI   0.70
+#define GENZ_A_BR_MAX  0.20
+#define GENZ_A_SAT     0.75
+#define GENZ_A_VAL_LO  0.60
+#define GENZ_A_VAL_HI  0.85
 
 varying vec3 vertColour;
 varying vec3 vertNormal;
@@ -125,6 +135,14 @@ void main()
 	            * smoothstep(GENZ_R_SAT - 0.06, GENZ_R_SAT + 0.06, bSat)
 	            * smoothstep(GENZ_R_VAL_LO, GENZ_R_VAL_HI, bMax);
 	col += GENZ_R_COR * rMask * bMax * GENZ_R_FORCA * bGanho;
+	// ---- amber back lamps ----
+	float aGr = texSample.y / max(texSample.x, 0.0001);
+	float aMask = smoothstep(GENZ_A_GR_LO - 0.06, GENZ_A_GR_LO + 0.06, aGr)
+	            * (1.0 - smoothstep(GENZ_A_GR_HI - 0.06, GENZ_A_GR_HI + 0.06, aGr))
+	            * (1.0 - smoothstep(GENZ_A_BR_MAX - 0.05, GENZ_A_BR_MAX + 0.05, texSample.z / max(texSample.x, 0.0001)))
+	            * smoothstep(GENZ_A_SAT - 0.06, GENZ_A_SAT + 0.06, bSat)
+	            * smoothstep(GENZ_A_VAL_LO, GENZ_A_VAL_HI, bMax);
+	col += GENZ_A_COR * aMask * bMax * GENZ_A_FORCA * bGanho;
 	// ceiling per VECTOR, not per channel: saturates without shifting hue (section 202)
 	col /= max(1.0, max(col.r, max(col.g, col.b)));
 	// ----------------------------------------------------------------
