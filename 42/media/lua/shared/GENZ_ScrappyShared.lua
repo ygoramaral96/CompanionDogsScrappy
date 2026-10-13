@@ -14,13 +14,33 @@ S.NET = "GENZ_Scrappy"
 S.BREED_KEY = "scrappy"
 S.clientHandlers = S.clientHandlers or {}
 
--- Full charges given by a FULL item; a half-used item gives half. Pilha = a quarter, car battery = full.
+-- SANDBOX: every number an admin may want to tune is an option of media/sandbox-options.txt (page
+-- GENZ_Scrappy), read at the moment it is used and never cached. An admin change made in game reaches
+-- SandboxVars on the server and on every client at once (GameServer/GameClient.receiveSandboxOptions ->
+-- SandboxOptions.toLua, decompiled 42.21), so caching would make the change wait for a restart.
+function S.opt(name)
+    local page = SandboxVars and SandboxVars.GENZ_Scrappy
+    local value = page and page[name]
+    if value == nil then
+        error("[GENZ_Scrappy] sandbox option GENZ_Scrappy." .. tostring(name) .. " is missing (sandbox-options.txt not loaded?)")
+    end
+    return value
+end
+
+-- Chargers: item -> sandbox option with the % of a full charge a FULL item gives (a half-used item gives half).
 S.CHARGERS = {
-    ["Base.Battery"] = 0.25,
-    ["Base.CarBattery1"] = 1.0,
-    ["Base.CarBattery2"] = 1.0,
-    ["Base.CarBattery3"] = 1.0,
+    ["Base.Battery"] = "ChargeBattery",
+    ["Base.CarBattery1"] = "ChargeCarBattery",
+    ["Base.CarBattery2"] = "ChargeCarBattery",
+    ["Base.CarBattery3"] = "ChargeCarBattery",
 }
+
+-- Full charges a full item of this type gives; 0 = not a charger (or switched off in the sandbox).
+function S.chargeOf(fullType)
+    local option = S.CHARGERS[fullType]
+    if not option then return 0 end
+    return S.opt(option) / 100
+end
 
 local OFF_MARGIN = 0.01
 
@@ -47,29 +67,30 @@ end
 
 -- WEAR: condition 1 = new, 0 = broken, kept in the dog's CompanionDogs data (survives being picked up,
 -- tested in game 10/10). A Scrappy that never wore down has no value yet: it is new.
-S.DEGRADED_BELOW = 0.1   -- below this: no jewel loot, no XP aura; at 0 it breaks and stays put
+-- Below this condition (sandbox WorkingThreshold, %): no jewel loot, no XP aura; at 0 it breaks and stays put.
+function S.degradedBelow()
+    return S.opt("WorkingThreshold") / 100
+end
+
 -- Maintenance is a training activity, modelled on the vanilla generator repair (ISFixGenerator: one
 -- ElectronicsScrap per cycle, +4% + Electricity level / 2, 5 XP, repeats until full). Scrappy pays double
--- XP on Electricity on purpose: it is meant to be THE way to train it. Only a screwdriver is needed.
--- Parts by item TYPE (Base module): gain = base + perkLevel * perLevel (condition, 0..1); xp = perk XP;
--- level = perk level below which the cycle starts to fail (see S.failPercent).
+-- XP on Electricity by default on purpose: it is meant to be THE way to train it. Only a screwdriver is needed.
+-- Parts by item TYPE (Base module). `opt` prefixes the sandbox options of that part: <opt>Gain and
+-- <opt>GainPerLevel (% of condition), <opt>XP, <opt>Level (perk level below which it starts to fail).
 S.REPAIRS = {
-    ElectronicsScrap = { perk = "Electricity", xp = 10, base = 0.04, perLevel = 0.005, level = 3 },
-    ScrapMetal       = { perk = "MetalWelding", xp = 15, base = 0.02, perLevel = 0.0025, level = 3 },
+    ElectronicsScrap = { perk = "Electricity", opt = "Electronics" },
+    ScrapMetal       = { perk = "MetalWelding", opt = "ScrapMetal" },
 }
 S.REPAIR_ORDER = { "ElectronicsScrap", "ScrapMetal" }
--- "Calibrate circuits": Electricity training that does not need wear, a few times per in-game day.
+-- "Calibrate circuits": Electricity training that does not need wear, CalibratePerDay times per in-game day.
 S.CALIBRATE = "calibrate"
-S.CALIBRATION = { part = "ElectronicsScrap", perk = "Electricity", xp = 10, perDay = 3, level = 3 }
+S.CALIBRATION = { part = "ElectronicsScrap", perk = "Electricity", opt = "Calibrate" }
 
--- FAILURE, copied from the vanilla item repair (FixingManager.getChanceOfFail, decompiled 42.21): 3%, +30%
--- per level missing, -5% per level above, clamped 0..100. Vanilla also adds +2% per earlier repair of the
--- item; left out here, a dog repaired every few days would end up never repairable. A failed cycle does
--- what the vanilla one does: the part is spent, -1% condition, no XP.
-S.FAIL_BASE = 3
-S.FAIL_PER_MISSING_LEVEL = 30
-S.FAIL_PER_EXTRA_LEVEL = 5
-S.FAILED_WEAR = 0.01
+-- FAILURE, copied from the vanilla item repair (FixingManager.getChanceOfFail, decompiled 42.21): FailBase
+-- (3%), +FailPerMissingLevel (30%) per level missing, -FailPerExtraLevel (5%) per level above, clamped
+-- 0..100. Vanilla also adds +2% per earlier repair of the item; left out here, a dog repaired every few days
+-- would end up never repairable. A failed cycle does what the vanilla one does: the part is spent, the
+-- condition drops by FailedWear (1%), no XP.
 
 -- What one maintenance mode spends and trains: a REPAIRS entry, or CALIBRATION.
 function S.maintenanceRule(mode)
@@ -77,15 +98,27 @@ function S.maintenanceRule(mode)
     return S.REPAIRS[mode]
 end
 
+function S.maintenanceXp(mode)
+    return S.opt(S.maintenanceRule(mode).opt .. "XP")
+end
+
+function S.requiredLevel(mode)
+    return S.opt(S.maintenanceRule(mode).opt .. "Level")
+end
+
+function S.failedWear()
+    return S.opt("FailedWear") / 100
+end
+
 -- Chance, 0..100, that one cycle of `mode` fails for this player.
 function S.failPercent(player, mode)
     local rule = S.maintenanceRule(mode)
-    local diff = player:getPerkLevel(Perks[rule.perk]) - rule.level
-    local percent = S.FAIL_BASE
+    local diff = player:getPerkLevel(Perks[rule.perk]) - S.requiredLevel(mode)
+    local percent = S.opt("FailBase")
     if diff < 0 then
-        percent = percent - diff * S.FAIL_PER_MISSING_LEVEL
+        percent = percent - diff * S.opt("FailPerMissingLevel")
     else
-        percent = percent - diff * S.FAIL_PER_EXTRA_LEVEL
+        percent = percent - diff * S.opt("FailPerExtraLevel")
     end
     return math.max(0, math.min(100, percent))
 end
@@ -102,7 +135,7 @@ end
 
 -- Switched on and not worn below the threshold: the jewel loot and the XP aura only run when this is true.
 function S.isWorking(animal)
-    return not S.isOff(animal) and S.condition(animal) >= S.DEGRADED_BELOW
+    return not S.isOff(animal) and S.condition(animal) >= S.degradedBelow()
 end
 
 function S.toolNotBroken(item)
@@ -115,7 +148,8 @@ end
 
 function S.repairGain(player, partType)
     local part = S.REPAIRS[partType]
-    return part.base + player:getPerkLevel(Perks[part.perk]) * part.perLevel
+    local level = player:getPerkLevel(Perks[part.perk])
+    return (S.opt(part.opt .. "Gain") + level * S.opt(part.opt .. "GainPerLevel")) / 100
 end
 
 function S.today()
@@ -124,8 +158,9 @@ end
 
 function S.calibrationsLeft(animal)
     local d = CompanionDogs.data(animal)
-    if d.scrappyCalDay ~= S.today() then return S.CALIBRATION.perDay end
-    return S.CALIBRATION.perDay - (d.scrappyCalCount or 0)
+    local perDay = S.opt("CalibratePerDay")
+    if d.scrappyCalDay ~= S.today() then return perDay end
+    return math.max(0, perDay - (d.scrappyCalCount or 0))
 end
 
 -- Can this player run maintenance `mode` on this dog right now? Shared by the action (client and server)

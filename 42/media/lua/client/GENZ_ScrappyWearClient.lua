@@ -32,7 +32,7 @@ local function addRepairEntries(sub, playerObj, animal)
         if playerObj:getInventory():containsTypeRecurse(partType) then
             local part = S.REPAIRS[partType]
             local label = getText("IGUI_Scrappy_RepairWith", getItemNameFromFullType("Base." .. partType),
-                                  percent(S.repairGain(playerObj, partType)), part.xp)
+                                  percent(S.repairGain(playerObj, partType)), S.maintenanceXp(partType))
             local option = sub:addOption(label, animal, onMaintain, playerObj, partType)
             if S.condition(animal) >= 1 then
                 disable(option, "IGUI_Scrappy_FullCondition")
@@ -45,7 +45,7 @@ end
 
 local function addCalibrateEntry(sub, playerObj, animal)
     local left = S.calibrationsLeft(animal)
-    local option = sub:addOption(getText("IGUI_Scrappy_Calibrate", left, S.CALIBRATION.xp), animal, onMaintain,
+    local option = sub:addOption(getText("IGUI_Scrappy_Calibrate", left, S.maintenanceXp(S.CALIBRATE)), animal, onMaintain,
                                  playerObj, S.CALIBRATE)
     if left <= 0 then
         disable(option, "IGUI_Scrappy_NoCalibrations")
