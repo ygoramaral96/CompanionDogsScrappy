@@ -103,6 +103,10 @@ local function syncSkin(animal)
     -- the pair the engine itself calls after a skin change (IsoAnimal.ensureCorrectSkin, 42.21)
     animal:resetModel()
     animal:resetModelNextFrame()
+    -- the reset builds a new body but keeps the hung models (the cargo case) bound to the old one
+    -- (ModelManager.Reset skips attachedModels, 42.21): rebuild them on the new body. The engine runs the
+    -- body reset before the hung-model reset in the same frame (ModelManager.update).
+    animal:resetEquippedHandsModels()
 end
 
 local function removeLights(cell, animal)
