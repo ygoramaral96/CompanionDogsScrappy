@@ -17,6 +17,19 @@ local function hasCargo(animal)
     return bag ~= nil and bag.items ~= nil and #bag.items > 0
 end
 
+-- The engine draws an animal's hung models only through setAttachedItem -> resetEquippedHandsModels, which is
+-- dropped while the animal has no model on screen (IsoGameCharacter.resetEquippedHandsModels: hasActiveModel).
+-- A dog that comes back into view (teleport, chunk) gets a fresh model with nothing hung on it
+-- (ModelManager.DoCharacterModelParts skips equipped models for animals, 42.21) though the item is still
+-- attached. So each time its model shows up again, the hung models are redrawn once.
+local wasShown = {}
+
+local function redrawWhenShown(animal)
+    local shown = animal:hasActiveModel()
+    if shown and not wasShown[animal] then animal:resetEquippedHandsModels() end
+    wasShown[animal] = shown
+end
+
 local function syncCargo(animal)
     if not CompanionDogs.ensureAttachSlots(animal) then
         print("[GENZ_Scrappy] ERROR: no attached-item slots on a Scrappy -- the cargo case cannot hang")
@@ -30,8 +43,14 @@ local function syncCargo(animal)
     local current = animal:getAttachedItem(CARGO_LOCATION)
     local currentType = current and current:getFullType()
     local wanted = hasCargo(animal) and CARGO_ITEM or nil
-    if currentType == wanted then return end
-    animal:setAttachedItem(CARGO_LOCATION, wanted and instanceItem(wanted) or nil)
+    if currentType ~= wanted then
+        animal:setAttachedItem(CARGO_LOCATION, wanted and instanceItem(wanted) or nil)
+    end
+    if wanted then
+        redrawWhenShown(animal)
+    else
+        wasShown[animal] = nil
+    end
 end
 
 -- The base client repaints the leather on every dog with a bag (CompanionDogs_Client bag paint loop).
@@ -61,11 +80,17 @@ Events.OnTick.Add(function()
     local cell = getCell()
     if not cell then return end
     local animals = cell:getAnimals()
+    local seen = {}
     for i = 0, animals:size() - 1 do
         local animal = animals:get(i)
         if not animal:isDead() and CompanionDogs.isDog(animal) and S.isScrappy(animal) then
+            seen[animal] = true
             syncCargo(animal)
         end
+    end
+    -- dogs gone from the cell: forget them, so a returning one is redrawn
+    for animal in pairs(wasShown) do
+        if not seen[animal] then wasShown[animal] = nil end
     end
 end)
 
