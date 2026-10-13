@@ -17,23 +17,9 @@ local function hasCargo(animal)
     return bag ~= nil and bag.items ~= nil and #bag.items > 0
 end
 
--- SONDA card #246 (remove after the reading): what this client sees for the cargo, printed on change.
-local probeLast = {}
-local function probeCargo(animal, step)
-    local bag = CompanionDogs.data(animal).bag
-    local current = animal:getAttachedItem(CARGO_LOCATION)
-    local line = string.format("step=%s bag=%s equipped=%s items=%s attached=%s scriptItem=%s",
-        step, tostring(bag ~= nil), tostring(bag and bag.equipped), tostring(bag and bag.items and #bag.items),
-        tostring(current and current:getFullType()), tostring(getScriptManager():FindItem(CARGO_ITEM) ~= nil))
-    if probeLast[animal] == line then return end
-    probeLast[animal] = line
-    print("[GENZ_card246] cargo " .. line)
-end
-
 local function syncCargo(animal)
-    probeCargo(animal, "before")
     if not CompanionDogs.ensureAttachSlots(animal) then
-        print("[GENZ_card246] cargo ensureAttachSlots FAILED")
+        print("[GENZ_Scrappy] ERROR: no attached-item slots on a Scrappy -- the cargo case cannot hang")
         return
     end
     for _, location in ipairs(LEATHER_LOCATIONS) do
@@ -46,7 +32,6 @@ local function syncCargo(animal)
     local wanted = hasCargo(animal) and CARGO_ITEM or nil
     if currentType == wanted then return end
     animal:setAttachedItem(CARGO_LOCATION, wanted and instanceItem(wanted) or nil)
-    probeCargo(animal, "after-set")
 end
 
 -- The base client repaints the leather on every dog with a bag (CompanionDogs_Client bag paint loop).
