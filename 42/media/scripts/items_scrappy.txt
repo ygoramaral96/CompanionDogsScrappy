@@ -9,7 +9,7 @@ module Base
         ItemType = base:normal,
         Weight = 0.1,
         Icon = AmmoCase,
-        StaticModel = AmmoBox_Ground,
-        WorldStaticModel = AmmoBox_Ground,
+        StaticModel = GENZ_ScrappyCargoBox,
+        WorldStaticModel = GENZ_ScrappyCargoBox,
     }
 }
