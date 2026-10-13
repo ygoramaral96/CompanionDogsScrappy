@@ -55,11 +55,12 @@ module Base
     /* The cargo case hung on saddlebags_c. Vanilla AmmoBox_Ground has no texture line: on the ground the
        game paints it from the bag's clothing item (Bag_AmmoBox -> clothes\bag\ammobox). Hung on an animal
        there is no clothing item, so this copy names the texture itself, like CompanionDogs'
-       CrudeLeatherBag_Ground (which has one and shows). Mesh and scale are vanilla's. */
+       CrudeLeatherBag_Ground (which has one and shows). Mesh and scale are vanilla's; the texture is the
+       vanilla case repainted in Scrappy's olive with a bone on each side (scripts/scrappy/paint_scrappy_cargo.py). */
     model GENZ_ScrappyCargoBox
     {
         mesh = WorldItems/Clothing/AmmoBox_Ground,
-        texture = Clothes/Bag/AmmoBox,
+        texture = WorldItems/GENZ_ScrappyCargoBox,
         scale = 0.125,
     }
 }
