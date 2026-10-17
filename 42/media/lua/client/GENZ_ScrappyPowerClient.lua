@@ -23,8 +23,18 @@ local function onRecharge(animal, playerObj, itemId)
     CompanionDogs.request("scrappyRecharge", animal, { itemId = itemId }, playerObj)
 end
 
+-- A stray Scrappy gets the same chargers under a "befriend" header (card #253): on the server the
+-- energy becomes trust until it is adopted.
+local function entryTitle(animal)
+    local CD = CompanionDogs
+    if CD.isCompanion(animal) then
+        return getText("IGUI_Scrappy_Recharge", percent(S.chargeFraction(animal)))
+    end
+    return getText("IGUI_Scrappy_Befriend", tostring(math.floor(CD.getTrust(animal))), tostring(CD.tameThreshold()))
+end
+
 local function addRechargeEntry(context, playerObj, animal)
-    local header = context:addOption(getText("IGUI_Scrappy_Recharge", percent(S.chargeFraction(animal))), nil, nil)
+    local header = context:addOption(entryTitle(animal), nil, nil)
     local chargers = chargersIn(playerObj)
     if #chargers == 0 then
         header.notAvailable = true
@@ -46,8 +56,11 @@ Events.OnClickedAnimalForContext.Add(function(player, context, animals)
     if not playerObj then return end
     local CD = CompanionDogs
     for _, animal in ipairs(animals) do
-        if CD.isDog(animal) and S.isScrappy(animal) and CD.isCompanion(animal) and CD.isOwnedBy(animal, playerObj) then
-            addRechargeEntry(context, playerObj, animal)
+        if CD.isDog(animal) and S.isScrappy(animal) then
+            local stray = not CD.isCompanion(animal)
+            if stray or CD.isOwnedBy(animal, playerObj) then
+                addRechargeEntry(context, playerObj, animal)
+            end
         end
     end
 end)

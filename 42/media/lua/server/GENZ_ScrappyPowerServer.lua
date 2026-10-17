@@ -3,7 +3,8 @@
 --   * thirst is held at 0 every in-game minute;
 --   * when the charge runs out (GENZ_ScrappyShared.offLevel) it shuts down: hunger is held there, the dog
 --     is put on STAY and the owner is told once;
---   * the "scrappyRecharge" command takes a pilha or a car battery from the owner's inventory.
+--   * the "scrappyRecharge" command takes a pilha or a car battery from the owner's inventory;
+--     on a STRAY Scrappy the same command builds trust instead, until it is adopted (card #253).
 -- Hooks are installed in OnGameBoot, after every base-mod file has defined what we wrap.
 if isClient() and not isServer() then return end
 
@@ -91,10 +92,74 @@ local function everyMinute()
     end
 end
 
+local function companionCount(player)
+    local companions = CompanionDogs.playerData(player).companions
+    if type(companions) ~= "table" then return 0 end
+    local n = 0
+    for _ in pairs(companions) do n = n + 1 end
+    return n
+end
+
+-- The tame step of CompanionDogs.Server.feed (CompanionDogs_Commands.lua), which is inline there and
+-- cannot be called without a food item. Kept line for line so a Scrappy is adopted like any dog.
+local function adopt(player, dog)
+    local CD = CompanionDogs
+    local pd = CD.playerData(player)
+    if pd.token ~= nil and not CD.hasRecoverableCompanion(player) then
+        pd.token = nil
+        pd.name = nil
+        pd.stash = nil
+        player:transmitModData()
+    end
+    local prev = CD.getCompanionAnimal(player)
+    CD.makeCompanion(dog, player)
+    if prev and prev ~= dog then
+        CD.setState(prev, CD.STATE_STAY)
+        CD.transmit(prev)
+    end
+    player:transmitModData()
+    local targs = { id = dog:getOnlineID(), breed = CD.getBreed(dog) }
+    if not isServer() then
+        targs.animal = dog
+    end
+    CD.notifyOwner(player, "tamed", targs)
+    print("[GENZ_Scrappy] " .. tostring(player:getUsername()) .. " befriended a stray Scrappy")
+end
+
+-- A stray Scrappy is befriended with ENERGY instead of food (card #253): it refuses food, and the base
+-- mod only gains trust by feeding. One full charge (100%) is the whole tame threshold, so with the
+-- defaults 4 pilhas (25% each) or 1 car battery; only what is still missing is drawn from the item.
+local function befriend(player, dog, item, uses, value)
+    local CD = CompanionDogs
+    local limit = CD.maxCompanions()
+    if limit > 0 and companionCount(player) >= limit then
+        CD.notifyOwner(player, "limitreached", { max = limit })   -- checked before the battery is spent
+        return
+    end
+    local need = CD.tameThreshold()
+    local missingCharge = math.max(0, need - CD.getTrust(dog)) / need
+    local energy = uses * value
+    local tamed = energy >= missingCharge
+    local spent = tamed and missingCharge or energy
+    item:setCurrentUsesFloat(uses - spent / value)
+    item:syncItemFields()
+    if tamed then
+        CD.setTrust(dog, need)
+        adopt(player, dog)
+    else
+        CD.setTrust(dog, CD.getTrust(dog) + spent * need)
+        CD.notifyOwner(player, "trust",
+            { id = dog:getOnlineID(), trust = CD.getTrust(dog), max = need, breed = CD.getBreed(dog) })
+    end
+    CD.transmit(dog)
+end
+
 local function recharge(player, args)
     local CD = CompanionDogs
     local dog = animalFromArgs(args)
-    if not player or not dog or not S.isScrappy(dog) or not CD.isOwnedBy(dog, player) then return end
+    if not player or not dog or not S.isScrappy(dog) then return end
+    local stray = not CD.isCompanion(dog)
+    if not stray and not CD.isOwnedBy(dog, player) then return end
     local dx, dy = dog:getX() - player:getX(), dog:getY() - player:getY()
     if dx * dx + dy * dy > RECHARGE_REACH * RECHARGE_REACH then
         S.toOwner(player, "toofar", {})
@@ -105,6 +170,10 @@ local function recharge(player, args)
     if value <= 0 then return end
     local uses = item:getCurrentUsesFloat()
     if uses <= 0 then return end
+    if stray then
+        befriend(player, dog, item, uses, value)
+        return
+    end
 
     local off = S.offLevel()
     local missing = math.min(dog:getHunger(), off)

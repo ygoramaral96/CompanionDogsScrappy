@@ -6,6 +6,7 @@
     "IGUI_PD_Breed_scrappy": "Scrappy",
     "IGUI_Scrappy_Looted": "Scrappy took: %1",
     "IGUI_Scrappy_Recharge": "Recharge Scrappy (charge %1)",
+    "IGUI_Scrappy_Befriend": "Give energy to Scrappy (trust %1/%2)",
     "IGUI_Scrappy_NoCharger": "Needs a battery or a car battery with charge",
     "IGUI_Scrappy_Recharged": "Scrappy charged: %1",
     "IGUI_Scrappy_NoFood": "Scrappy does not eat - recharge it with a battery",
