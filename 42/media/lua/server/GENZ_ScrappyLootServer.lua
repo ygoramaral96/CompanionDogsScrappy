@@ -53,12 +53,14 @@ local function isLoot(fullType)
 end
 
 local function hasLootSource()
-    if not isEmpty(lootSources) then return true end
-    if not saidNothingRegistered then
-        saidNothingRegistered = true
-        print(LOG_TAG .. "no loot source registered -- Scrappy collects nothing from corpses")
-    end
-    return false
+    return not isEmpty(lootSources)
+end
+
+-- Said once: with no loot source this runs on every zombie death.
+local function warnNoLootSourceOnce()
+    if saidNothingRegistered then return end
+    saidNothingRegistered = true
+    print(LOG_TAG .. "no loot source registered -- Scrappy collects nothing from corpses")
 end
 
 local function sameFloor(a, b)
@@ -85,7 +87,10 @@ local function closestScrappy(x, y, z)
 end
 
 local function moveLootToBag(zombie)
-    if not hasLootSource() then return end
+    if not hasLootSource() then
+        warnNoLootSourceOnce()
+        return
+    end
     local inv = zombie:getInventory()
     if not inv then return end
     local CD = CompanionDogs
