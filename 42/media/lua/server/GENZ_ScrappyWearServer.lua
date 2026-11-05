@@ -148,7 +148,7 @@ function Wear.maintain(player, dog, mode)
     return repair(player, dog, mode)
 end
 
-Events.OnGameBoot.Add(function()
+S.atServerBoot(function()
     local CD = CompanionDogs
     if not (CD and CD.recordDogZombieKill and CD.regCompanions) then
         print("[GENZ_Scrappy] ERROR: CompanionDogs API missing (recordDogZombieKill/regCompanions) -- wear is OFF")

@@ -98,7 +98,7 @@ local function everyMinute()
     end
 end
 
-Events.OnGameBoot.Add(function()
+S.atServerBoot(function()
     local CD = CompanionDogs
     if not (CD and CD.Server and CD.applyBagVisual and CD.spillBag and CD.bagItemFromRecord and CD.regCompanions) then
         print("[GENZ_Scrappy] ERROR: CompanionDogs bag API missing -- Scrappy has NO built-in bag (leather saddlebags apply)")

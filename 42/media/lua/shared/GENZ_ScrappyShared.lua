@@ -191,6 +191,28 @@ function S.toOwner(owner, command, args)
     print("[GENZ_Scrappy] '" .. tostring(command) .. "' has no client handler in single player")
 end
 
+-- Runs fn on the server once every mod's Lua has loaded, the same on the dedicated server and in single
+-- player (card #311). Events.OnGameBoot alone never fires for a file in server/ outside the dedicated
+-- server: there that folder loads BEFORE OnGameBoot (GameServer.java:1472-1474, :1499, decompiled 42.21);
+-- in single player and on an MP client it loads AFTER (Core.java:3985 vs GameLoadingState.java:148), so
+-- the handler waits for an event that already happened, with no error. OnInitGlobalModData is the first
+-- event after that with the world's sandbox read and no chunk loaded yet (IsoWorld.java:1909, :2022).
+-- One branch per side, so fn cannot run twice. An MP client loads the server folder too and has no
+-- business running a server handler.
+-- Scrappy keeps its own copy: it is published alone and requires only CompanionDogs (a GENZ_Core will
+-- be the one home if it ever exists). GENZ_Equipamentos has the same rule in GENZ_ServerBoot.
+function S.atServerBoot(fn)
+    if type(fn) ~= "function" then
+        error("GENZ_Scrappy.atServerBoot: expected a function, got " .. tostring(fn))
+    end
+    if isServer() then
+        Events.OnGameBoot.Add(fn)
+        return
+    end
+    if isClient() then return end
+    Events.OnInitGlobalModData.Add(fn)
+end
+
 Events.OnServerCommand.Add(function(module, command, args)
     if module ~= S.NET then return end
     local handler = S.clientHandlers[command]

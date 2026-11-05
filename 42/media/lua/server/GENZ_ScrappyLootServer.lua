@@ -14,9 +14,9 @@
 -- sendCharacterDeath, so removing items here costs no network and cannot desync. One tick later the
 -- corpse already exists on the clients and every removal would need its own sync.
 --
--- WHY REGISTERED IN OnGameBoot: this handler must run AFTER the jewel drop. Lua event callbacks run in
--- the order they were added (zombie.Lua.Event.trigger walks an ArrayList), and the jewel drop adds its
--- handler at file load; adding ours at OnGameBoot puts it after every file-load registration.
+-- WHY REGISTERED AT BOOT (S.atServerBoot): this handler must run AFTER the jewel drop. Lua event callbacks
+-- run in the order they were added (zombie.Lua.Event.trigger walks an ArrayList), and the jewel drop adds
+-- its handler at file load; adding ours at boot puts it after every file-load registration.
 -- The loot sources are looked up on every death, not at boot, so the mod that registers them may
 -- load before or after this one.
 if isClient() and not isServer() then return end
@@ -120,7 +120,7 @@ local function moveLootToBag(zombie)
     S.toOwner(owner, "looted", { items = taken })
 end
 
-Events.OnGameBoot.Add(function()
+S.atServerBoot(function()
     if not (CompanionDogs and CompanionDogs.regCompanions and CompanionDogs.bagInsert) then
         print(LOG_TAG .. "ERROR: CompanionDogs API missing (regCompanions/bagInsert) -- loot is OFF")
         return

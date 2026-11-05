@@ -49,7 +49,7 @@ local function onAddXP(chr, perk, amount)
     granting = false
 end
 
-Events.OnGameBoot.Add(function()
+S.atServerBoot(function()
     local CD = CompanionDogs
     if not (Perks and Perks.Electricity and Perks.MetalWelding) then
         print("[GENZ_Scrappy] ERROR: Perks.Electricity / Perks.MetalWelding not found -- XP aura is OFF")

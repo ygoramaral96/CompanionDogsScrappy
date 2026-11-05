@@ -198,7 +198,7 @@ local function recharge(player, args)
     S.toOwner(player, "recharged", { pct = pct })
 end
 
-Events.OnGameBoot.Add(function()
+S.atServerBoot(function()
     local CD = CompanionDogs
     if not (CD and CD.Server and CD.setNeed and CD.regCompanions) then
         print("[GENZ_Scrappy] ERROR: CompanionDogs server API missing -- Scrappy power is OFF (it will eat like a dog)")
