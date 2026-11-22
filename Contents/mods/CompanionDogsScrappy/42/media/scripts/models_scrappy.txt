@@ -1,0 +1,66 @@
+module Base
+{
+    /* Scrappy body. The GLB keeps the German Shepherd skeleton and its 20 Rac_* clips byte for
+       byte (only mesh, skin weights, inverse bind and texture were replaced), so the attachment
+       offsets below are the German Shepherd's: same bones, same bind skeleton. GLB = scale 1.0
+       (pz-b42-modding §195).
+       Shader: animalEffect + neon on the eye visor line (lime glows strong, red weak);
+       CompanionDogsScrappyLightsClient swaps to ScrappyOff.png (red line) when it shuts down.
+       Ruler: scripts/scrappy/checar_scrappy_neon.py
+       saddlebags_l/_r stay empty on Scrappy (built-in bag); saddlebags_c carries the ammo case
+       (GENZ_ScrappyCargoBox) while the bag holds something -- offset, rotate and scale found in game
+       with a debug tuner (skill pz-ajuste-ao-vivo, 13/10): upright, along the back rail. At 1.0 the
+       case was cut off or vanished from some distances and angles; at 0.5 it shows. */
+    model Scrappy_Body
+    {
+        mesh = Skinned/Scrappy_Body,
+        shader = scrappy_neon,
+        static = false,
+        animationsMesh = ScrappyAnim,
+        attachment head
+        {
+            offset = -0.0106 0.2881 0.0874,
+            rotate = -179.0 -5.0 95.0,
+            bone = Dummy01,
+        }
+        attachment saddlebags_l
+        {
+            offset = 0.065 0.04 0.05,
+            rotate = 8.0 -90.0 90.0,
+            scale = 0.5,
+            bone = Spine_03,
+        }
+        attachment saddlebags_r
+        {
+            offset = -0.065 0.04 0.05,
+            rotate = 8.0 90.0 -90.0,
+            scale = 0.5,
+            bone = Spine_03,
+        }
+        attachment saddlebags_c
+        {
+            offset = 0.0 0.0090 -0.0364,
+            rotate = 270.0 0.0 0.0,
+            scale = 0.5,
+            bone = Spine_03,
+        }
+    }
+
+    animationsMesh ScrappyAnim
+    {
+        meshFile = Skinned/Scrappy_Body,
+        keepMeshAnimations = true,
+    }
+
+    /* The cargo case hung on saddlebags_c. Vanilla AmmoBox_Ground has no texture line: on the ground the
+       game paints it from the bag's clothing item (Bag_AmmoBox -> clothes\bag\ammobox). Hung on an animal
+       there is no clothing item, so this copy names the texture itself, like CompanionDogs'
+       CrudeLeatherBag_Ground (which has one and shows). Mesh and scale are vanilla's; the texture is the
+       vanilla case repainted in Scrappy's olive with a bone on each side (scripts/scrappy/paint_scrappy_cargo.py). */
+    model GENZ_ScrappyCargoBox
+    {
+        mesh = WorldItems/Clothing/AmmoBox_Ground,
+        texture = WorldItems/GENZ_ScrappyCargoBox,
+        scale = 0.125,
+    }
+}

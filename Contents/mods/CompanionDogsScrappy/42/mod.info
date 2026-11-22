@@ -1,0 +1,8 @@
+name=CD: Scrappy
+id=CompanionDogsScrappy
+author=Rougy
+modversion=0.2.0
+require=CompanionDogs
+pzversion=42.19.0
+versionMin=42.18.0
+description=Scrappy, the scrap dog: a robot companion for Companion Dogs (requires Companion Dogs with add-on API 3 or newer). It pulls out of the zombies that die near it whatever items another mod registers (jewelry, for instance), carries a built-in cargo compartment (a metal case shows on its back when it holds something), gives +20% Electrical and Metal Welding XP to whoever works near it, runs on batteries (a battery or a car battery) instead of food, wears down and needs repair, and its eye and lamp go from green to amber and red as zombies get close. It does not breed. Custom model on the German Shepherd skeleton and animations of Companion Dogs, used under the author's add-on policy (credit: Companion Dogs and its author). Do not remove this mod from a save with a living Scrappy.
