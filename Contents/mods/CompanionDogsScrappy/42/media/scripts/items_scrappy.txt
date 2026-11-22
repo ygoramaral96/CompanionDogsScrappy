@@ -1,6 +1,6 @@
 module Base
 {
-    /* Scrappy's cargo case, VISUAL only (card #246): the vanilla ammo case hung on the saddlebags_c point
+    /* Scrappy's cargo case, VISUAL only: the vanilla ammo case hung on the saddlebags_c point
        of Scrappy_Body while its built-in bag holds something (CompanionDogsScrappyCargoClient). Never crafted,
        looted or used -- same role as CompanionDogs' CompanionDogsSaddlebagStrap. */
     item ScrappyCargoBox

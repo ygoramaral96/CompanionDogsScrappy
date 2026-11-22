@@ -1,4 +1,4 @@
--- Scrappy wear and maintenance, server side (card #246).
+-- Scrappy wear and maintenance, server side.
 --   * wear: a little every in-game minute, and more for each zombie it kills (CD.recordDogZombieKill,
 --     called by CompanionDogs_Strike on the server and read by field, so wrapping it is enough);
 --   * below CompanionDogsScrappy.degradedBelow() the loot and the XP aura stop (they check S.isWorking);
@@ -80,7 +80,7 @@ end
 
 -- XP through the vanilla global (what ISFixGenerator uses): on the server it goes through GameServer.addXp,
 -- which applies the normal multipliers AND syncs XP to the client (updateXpChecker). The short
--- player:getXp():AddXP overloads give nothing on a dedicated server (skill §221). Events.AddXP fires inside,
+-- player:getXp():AddXP overloads give nothing on a dedicated server. Events.AddXP fires inside,
 -- so the Scrappy XP aura applies when the dog is working.
 local function giveXp(player, perkName, amount)
     addXp(player, Perks[perkName], amount)

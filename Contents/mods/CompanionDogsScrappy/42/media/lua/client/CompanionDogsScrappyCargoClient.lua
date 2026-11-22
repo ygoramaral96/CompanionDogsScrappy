@@ -1,4 +1,4 @@
--- Scrappy's cargo visual, client side (card #246). Its bag is built in (CompanionDogsScrappyBagServer): empty,
+-- Scrappy's cargo visual, client side. Its bag is built in (CompanionDogsScrappyBagServer): empty,
 -- nothing hangs on its back; with cargo inside, the vanilla ammo case (ScrappyCargoBox) sits on the
 -- saddlebags_c point of Scrappy_Body (placed in models_scrappy.txt). The leather saddlebags of
 -- CompanionDogs are never drawn on Scrappy.

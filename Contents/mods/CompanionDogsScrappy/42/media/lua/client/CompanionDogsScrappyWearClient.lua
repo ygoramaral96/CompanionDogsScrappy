@@ -1,4 +1,4 @@
--- Scrappy maintenance, client side (card #246): "Maintenance" on the dog's context menu. Each entry walks
+-- Scrappy maintenance, client side: "Maintenance" on the dog's context menu. Each entry walks
 -- next to the dog and queues CompanionDogsScrappyMaintainAction (a timed action like the vanilla generator repair):
 -- one repair entry per part type carried, plus "Calibrate circuits" (Electricity training, a few per day).
 require "CompanionDogsScrappyShared"

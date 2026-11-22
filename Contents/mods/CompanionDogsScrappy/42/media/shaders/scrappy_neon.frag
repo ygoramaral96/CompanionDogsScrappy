@@ -1,9 +1,9 @@
 #version 110
 
-// Scrappy neon (card #246) -- vanilla animalEffect.frag + three glow keys.
+// Scrappy neon -- vanilla animalEffect.frag + three glow keys.
 // The .vert is animalEffect.vert byte for byte (skinning untouched).
-//   LIME  (visor, Scrappy.png, on)        -> strong green glow: key and numbers = the bestiary neon shader
-//                                            (pz-b42-modding section 202), without the rim (the animal
+//   LIME  (visor, Scrappy.png, on)        -> strong green glow: key and numbers of a plain neon shader
+//                                            without the rim (the animal
 //                                            .vert does not output vertNormalClip)
 //   RED   (visor: alert / shut down)     -> the bright alert red glows as strong as the lime;
 //                                            ScrappyOff.png paints a DARKER red (value 0.62), which this

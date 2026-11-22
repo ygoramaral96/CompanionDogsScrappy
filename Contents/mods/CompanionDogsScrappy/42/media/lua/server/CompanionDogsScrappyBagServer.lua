@@ -1,4 +1,4 @@
--- Scrappy's built-in bag, server side (card #246). Scrappy is a robot: its cargo compartment is part of
+-- Scrappy's built-in bag, server side. Scrappy is a robot: its cargo compartment is part of
 -- the body, so it never wears CompanionDogs' leather saddlebags.
 --   * every Scrappy companion gets the base mod's bag record by itself (d.bag.equipped = true), so
 --     "Open bag" works with no saddlebag crafted or equipped;

@@ -1,4 +1,4 @@
--- Scrappy lights, client side (card #246).
+-- Scrappy lights, client side.
 --   SKIN (visor line + 4 back lamps, glowing through scrappy_neon; the lamps throw no light on the
 --   world): Scrappy<alert><worn>.png --
 --     <alert> = "" (lime visor) / "Amber" / "Red" by the zombies near it (ALERT, below);
@@ -13,7 +13,7 @@
 --   clients (a dedicated server has none).
 --   WEAR AND CHARGE: below the sandbox WorkingThreshold (S.degradedBelow -- the condition under which
 --   the loot and the XP aura stop), the front light fades with the condition AND with the battery
---   charge, following the lower of the two, in LIGHT_STEPS steps; it goes out at 0 (Ygor, 13/10).
+--   charge, following the lower of the two, in LIGHT_STEPS steps; it goes out at 0.
 --   ALERT: zombies within CompanionDogs' own attack radius (CD.ZOMBIE_ATTACK_RADIUS, read on use), same
 --   floor: from sandbox ThreatAmber it turns amber, from ThreatRed red. A higher alert shows at once; a
 --   lower one only after ALERT_HOLD_MS, so a zombie stepping in and out of range does not flicker the
@@ -41,13 +41,13 @@ local ALERT = {
 -- radius in whole squares; strength scales the alert colour. Lights snap to squares (IsoLightSource takes
 -- ints), so ahead/side below a square only matter where they cross one. The visor
 -- line is already at ~85% of white (the shader cannot go further), so the light is what makes the eyes
--- read strong. Tested 13/10: a radius-2 head light painted the whole dog green -- the head light stays
+-- read strong. Tested in game: a radius-2 head light painted the whole dog green -- the head light stays
 -- small and faint, the beam ahead carries the colour.
--- the head, where the eyes are; ahead 1.3 found in game with /scrappy_luzes (Ygor, 13/10)
+-- the head, where the eyes are; ahead 1.3 found in game with /scrappy_lights
 local HEAD_LIGHT = { ahead = 1.3, side = 0, radius = 1, strength = 0.45 }
 -- the beam, built by rule (frontLights): count lights from `start` squares ahead, `spacing` apart; the
 -- radius starts at `radius` and grows by `radiusGrow` per light; the strength goes from `strengthNear` to
--- `strengthFar`. 0 lights = head only. First guess 13/10 (Ygor tunes it with /scrappy_luzes).
+-- `strengthFar`. 0 lights = head only. Tuned in game with /scrappy_lights.
 local BEAM = {
     count = 3, start = 1.5, spacing = 1.5,
     radius = 1, radiusGrow = 1,
@@ -168,7 +168,7 @@ local function lightLevel(animal)
 end
 
 -- A light is recreated only when its square, its level or the alert changes, never every frame (a new
--- IsoLightSource every frame leaks, pz-b42-modding 04 (c)).
+-- IsoLightSource every frame leaks).
 local function placeLights(cell, animal, level)
     local fx, fy = animal:getForwardDirectionX(), animal:getForwardDirectionY()
     local z = math.floor(animal:getZ())

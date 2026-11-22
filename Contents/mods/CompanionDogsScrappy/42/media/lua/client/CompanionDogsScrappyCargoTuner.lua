@@ -1,18 +1,18 @@
--- Scrappy cargo-case tuner, DEBUG ONLY (card #246, skill pz-ajuste-ao-vivo): a small native window, opened
--- and closed by the chat command /scrappy_caixa, that edits the saddlebags_c attachment of Scrappy_Body live --
--- offset, rotate, scale and the BONE it hangs from (a list of the dog's bones). Type, press Aplicar.
---   Copiar bloco  -> the attachment block, as it goes in models_scrappy.txt, in the chat, in console.txt and
+-- Scrappy cargo-case tuner, DEBUG ONLY: a small native window, opened
+-- and closed by the chat command /scrappy_cargo, that edits the saddlebags_c attachment of Scrappy_Body live --
+-- offset, rotate, scale and the BONE it hangs from (a list of the dog's bones). Type, press Apply.
+--   Copy block    -> the attachment block, as it goes in models_scrappy.txt, in the chat, in console.txt and
 --                    on the clipboard
---   Voltar ao arquivo -> the numbers the game started with
+--   Back to file  -> the numbers the game started with
 -- Fields take only digits, "." and "-" (setOnlyNumbers) and turn red while out of range. Nothing is saved:
--- reopening the game goes back to the file. Stays in the mod for later tests (Ygor, 13/10).
+-- reopening the game goes back to the file. Stays in the mod for later tests.
 if not isDebugEnabled() or isServer() then return end
 require "ISUI/ISCollapsableWindow"
 require "ISUI/ISButton"
 require "ISUI/ISTextEntryBox"
 require "ISUI/ISComboBox"
 
-local COMMAND = "/scrappy_caixa"
+local COMMAND = "/scrappy_cargo"
 local TAG = "[CompanionDogsScrappyCargoTuner] "
 local MODEL = "Base.Scrappy_Body"
 local ATTACHMENT = "saddlebags_c"
@@ -21,7 +21,7 @@ local LABEL_W = 110
 local ENTRY_W = 170
 local PAD = 10
 local MAX_CHARS = 8
--- The skeleton of Scrappy_Body.glb (the German Shepherd's, 55 joints), read from the GLB's skin on 13/10;
+-- The skeleton of Scrappy_Body.glb (the German Shepherd's, 55 joints), read from the GLB's skin;
 -- Translation_Data is animation data, not a place to hang anything.
 local BONES = {
     "Dummy01", "Base", "Root_bone", "Spine_base", "Spine_01", "Spine_02", "Spine_03", "Spine_04", "Spine_05",
@@ -55,7 +55,7 @@ end
 local function copyBlock(lines)
     for _, line in ipairs(lines) do chatLine(line) end
     Clipboard.setClipboard(table.concat(lines, "\n"))
-    chatLine("copiado: Ctrl+V cola o bloco")
+    chatLine("copied: Ctrl+V pastes the block")
 end
 
 -- %.4f without trailing zeros (%.Nf is proven in Kahlua; %g is not relied on)
@@ -67,8 +67,8 @@ end
 local function numberIn(low, high)
     return function(text)
         local n = tonumber(text)
-        if not n then return nil, "nao e' numero" end
-        if n < low or n > high then return nil, "fora de " .. fmt(low) .. " a " .. fmt(high) end
+        if not n then return nil, "not a number" end
+        if n < low or n > high then return nil, "out of " .. fmt(low) .. " to " .. fmt(high) end
         return n
     end
 end
@@ -98,8 +98,8 @@ local function buildFields(attach)
     local offset, angle = numberIn(-5, 5), numberIn(-360, 360)
     return {
         axis(o, "offset X", 1, offset), axis(o, "offset Y", 2, offset), axis(o, "offset Z", 3, offset),
-        axis(r, "giro X", 1, angle), axis(r, "giro Y", 2, angle), axis(r, "giro Z", 3, angle),
-        { label = "escala", show = function() return fmt(attach:getScale()) end, parse = numberIn(0.01, 10),
+        axis(r, "rotate X", 1, angle), axis(r, "rotate Y", 2, angle), axis(r, "rotate Z", 3, angle),
+        { label = "scale", show = function() return fmt(attach:getScale()) end, parse = numberIn(0.01, 10),
           set = function(v) attach:setScale(v) end },
     }
 end
@@ -144,7 +144,7 @@ function CompanionDogsScrappyCargoTuner:new(attach)
     local o = ISCollapsableWindow:new(x, 80, width, height)
     setmetatable(o, self)
     self.__index = self
-    o.title = "Caixa do Scrappy (nao salva)"
+    o.title = "Scrappy cargo case (not saved)"
     o.resizable = false
     o.attach = attach
     o.fields = fields
@@ -174,9 +174,9 @@ function CompanionDogsScrappyCargoTuner:createChildren()
     self:addChild(self.boneBox)
     local buttonsY = boneY + ROW + PAD
     local half = (self.width - PAD * 3) / 2
-    self:makeButton(PAD, buttonsY, self.width - PAD * 2, "Aplicar", self.onApply)
-    self:makeButton(PAD, buttonsY + ROW + 4, half, "Copiar bloco", self.onCopy)
-    self:makeButton(PAD * 2 + half, buttonsY + ROW + 4, half, "Voltar ao arquivo", self.onRestore)
+    self:makeButton(PAD, buttonsY, self.width - PAD * 2, "Apply", self.onApply)
+    self:makeButton(PAD, buttonsY + ROW + 4, half, "Copy block", self.onCopy)
+    self:makeButton(PAD * 2 + half, buttonsY + ROW + 4, half, "Back to file", self.onRestore)
 end
 
 function CompanionDogsScrappyCargoTuner:makeButton(x, y, w, label, onClick)
@@ -195,7 +195,7 @@ function CompanionDogsScrappyCargoTuner:prerender()
         self:drawText(field.label, PAD, top + (i - 1) * ROW + 2, 1, bad and 0.35 or 1, bad and 0.25 or 1, 1,
             UIFont.Small)
     end
-    self:drawText("osso", PAD, top + #self.fields * ROW + 2, 1, 1, 1, 1, UIFont.Small)
+    self:drawText("bone", PAD, top + #self.fields * ROW + 2, 1, 1, 1, 1, UIFont.Small)
 end
 
 function CompanionDogsScrappyCargoTuner:refreshEntries()
@@ -213,7 +213,7 @@ function CompanionDogsScrappyCargoTuner:onApply()
         local value, err = field.parse(field.entry:getText())
         if value == nil then
             field.bad = true
-            chatLine(field.label .. ": " .. err .. " -- nada aplicado", true)
+            chatLine(field.label .. ": " .. err .. " -- nothing applied", true)
             return
         end
         values[i] = value
@@ -224,10 +224,10 @@ function CompanionDogsScrappyCargoTuner:onApply()
     local hung = rehang()
     self:refreshEntries()
     if hung == 0 then
-        chatLine("aplicado, mas nenhum Scrappy esta' com a caixa: ponha um item na bolsa dele", true)
+        chatLine("applied, but no Scrappy is showing the case: put an item in its bag", true)
         return
     end
-    chatLine("aplicado (osso " .. self.attach:getBone() .. ")")
+    chatLine("applied (bone " .. self.attach:getBone() .. ")")
 end
 
 function CompanionDogsScrappyCargoTuner:onCopy()
@@ -244,7 +244,7 @@ end
 
 function CompanionDogsScrappyCargoTuner:onRestore()
     if not fileValues then
-        chatLine("nada mudou ainda: ja' esta' no arquivo")
+        chatLine("nothing changed yet: it is already in the file")
         return
     end
     local saved = fileValues
@@ -254,7 +254,7 @@ function CompanionDogsScrappyCargoTuner:onRestore()
     self.attach:setBone(saved.bone)
     rehang()
     self:refreshEntries()
-    chatLine("voltou ao arquivo")
+    chatLine("back to the file")
 end
 
 function CompanionDogsScrappyCargoTuner:close()
@@ -269,7 +269,7 @@ function CompanionDogsScrappyCargoTuner.toggle()
     end
     local attach = attachmentOf()
     if not attach then
-        chatLine(MODEL .. " / " .. ATTACHMENT .. " nao encontrado no script", true)
+        chatLine(MODEL .. " / " .. ATTACHMENT .. " not found in the script", true)
         return
     end
     local window = CompanionDogsScrappyCargoTuner:new(attach)
@@ -278,7 +278,7 @@ function CompanionDogsScrappyCargoTuner.toggle()
     CompanionDogsScrappyCargoTuner.instance = window
 end
 
--- Chat command wrap (skill pz-ajuste-ao-vivo, "Comando de chat").
+-- Chat command wrap.
 local function wrapChat()
     if not (ISChat and ISChat.onCommandEntered) or ISChat._scrappyCargoTuner then return end
     ISChat._scrappyCargoTuner = true

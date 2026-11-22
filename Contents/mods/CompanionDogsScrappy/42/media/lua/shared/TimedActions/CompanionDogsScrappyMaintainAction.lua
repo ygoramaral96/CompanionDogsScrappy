@@ -1,4 +1,4 @@
--- Scrappy maintenance as a timed action (card #246), modelled on the vanilla ISFixGenerator: a progress
+-- Scrappy maintenance as a timed action, modelled on the vanilla ISFixGenerator: a progress
 -- bar, one part per cycle, and it queues the next cycle while it still makes sense.
 -- mode = a part type from CompanionDogsScrappy.REPAIRS ("ElectronicsScrap", "ScrapMetal") or CompanionDogsScrappy.CALIBRATE.
 --

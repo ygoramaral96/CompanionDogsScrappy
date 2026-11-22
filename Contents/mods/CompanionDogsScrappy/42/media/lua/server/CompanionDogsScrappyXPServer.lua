@@ -1,4 +1,4 @@
--- Scrappy XP aura (card #246): while the owner has their Scrappy close by -- switched on and loyal --
+-- Scrappy XP aura: while the owner has their Scrappy close by -- switched on and loyal --
 -- Electricity and Metal Welding XP is worth sandbox AuraMultiplier times as much.
 --
 -- Same shape as the base mod's breed bonuses (CompanionDogs_XPBoost), on purpose:

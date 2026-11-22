@@ -1,5 +1,5 @@
--- Scrappy power, client side (card #246): "Recharge Scrappy" on the dog's context menu, one entry per
--- pilha / car battery with charge in the main inventory, and the owner's notices. Since card #253 it
+-- Scrappy power, client side: "Recharge Scrappy" on the dog's context menu, one entry per
+-- battery / car battery with charge in the main inventory, and the owner's notices. It
 -- takes the place of the base mod's "Feed" option, and a stray Scrappy gets it too (to befriend it).
 require "CompanionDogsScrappyShared"
 local S = CompanionDogsScrappy
@@ -24,7 +24,7 @@ local function onRecharge(animal, playerObj, itemId)
     CompanionDogs.request("scrappyRecharge", animal, { itemId = itemId }, playerObj)
 end
 
--- A stray Scrappy gets the same chargers under a "befriend" header (card #253): on the server the
+-- A stray Scrappy gets the same chargers under a "befriend" header: on the server the
 -- energy becomes trust until it is adopted.
 local function entryTitle(animal)
     local CD = CompanionDogs
@@ -54,7 +54,7 @@ local function fillChargers(menu, header, playerObj, animal)
 end
 
 -- The base mod's own "Feed" option, turned into ours IN PLACE (same spot in the menu): Scrappy
--- refuses food, so "Feed" always failed (Ygor, card #253: "recarregar soa melhor").
+-- refuses food, so "Feed" always failed, and "Recharge" says what it does.
 local function takeOver(menu, option, playerObj, animal)
     option.name = entryTitle(animal)
     option.target, option.onSelect = nil, nil

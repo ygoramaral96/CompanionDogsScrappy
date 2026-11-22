@@ -1,10 +1,10 @@
--- Scrappy power, server side (card #246). Scrappy runs on batteries instead of food:
+-- Scrappy power, server side. Scrappy runs on batteries instead of food:
 --   * food and water are refused (hand, bowl, trough) -- only for Scrappy, every other dog is untouched;
 --   * thirst is held at 0 every in-game minute;
 --   * when the charge runs out (CompanionDogsScrappyShared.offLevel) it shuts down: hunger is held there, the dog
 --     is put on STAY and the owner is told once;
---   * the "scrappyRecharge" command takes a pilha or a car battery from the owner's inventory;
---     on a STRAY Scrappy the same command builds trust instead, until it is adopted (card #253).
+--   * the "scrappyRecharge" command takes a battery or a car battery from the owner's inventory;
+--     on a STRAY Scrappy the same command builds trust instead, until it is adopted.
 -- Hooks are installed in OnGameBoot, after every base-mod file has defined what we wrap.
 if isClient() and not isServer() then return end
 
@@ -126,9 +126,9 @@ local function adopt(player, dog)
     print("[CompanionDogsScrappy] " .. tostring(player:getUsername()) .. " befriended a stray Scrappy")
 end
 
--- A stray Scrappy is befriended with ENERGY instead of food (card #253): it refuses food, and the base
+-- A stray Scrappy is befriended with ENERGY instead of food: it refuses food, and the base
 -- mod only gains trust by feeding. One full charge (100%) is the whole tame threshold, so with the
--- defaults 4 pilhas (25% each) or 1 car battery; only what is still missing is drawn from the item.
+-- defaults 4 batteries (25% each) or 1 car battery; only what is still missing is drawn from the item.
 local function befriend(player, dog, item, uses, value)
     local CD = CompanionDogs
     local limit = CD.maxCompanions()

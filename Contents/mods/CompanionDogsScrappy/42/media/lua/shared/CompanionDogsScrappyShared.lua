@@ -1,4 +1,4 @@
--- Scrappy shared rules (card #246): the breed key, the power model and the one path from the server
+-- Scrappy shared rules: the breed key, the power model and the one path from the server
 -- to the dog's owner. Loaded on client and server.
 --
 -- POWER MODEL: Scrappy does not eat. Its charge is the base mod's HUNGER read upside down, so the
@@ -66,7 +66,7 @@ function S.isOff(animal)
 end
 
 -- WEAR: condition 1 = new, 0 = broken, kept in the dog's CompanionDogs data (survives being picked up,
--- tested in game 10/10). A Scrappy that never wore down has no value yet: it is new.
+-- tested in game). A Scrappy that never wore down has no value yet: it is new.
 -- Below this condition (sandbox WorkingThreshold, %): no jewel loot, no XP aura; at 0 it breaks and stays put.
 function S.degradedBelow()
     return S.opt("WorkingThreshold") / 100
@@ -192,7 +192,7 @@ function S.toOwner(owner, command, args)
 end
 
 -- Runs fn on the server once every mod's Lua has loaded, the same on the dedicated server and in single
--- player (card #311). Events.OnGameBoot alone never fires for a file in server/ outside the dedicated
+-- player. Events.OnGameBoot alone never fires for a file in server/ outside the dedicated
 -- server: there that folder loads BEFORE OnGameBoot (GameServer.java:1472-1474, :1499, decompiled 42.21);
 -- in single player and on an MP client it loads AFTER (Core.java:3985 vs GameLoadingState.java:148), so
 -- the handler waits for an event that already happened, with no error. OnInitGlobalModData is the first

@@ -1,8 +1,8 @@
--- Scrappy loot (cards #246, #300). When a zombie dies, the closest Scrappy companion near the
+-- Scrappy loot. When a zombie dies, the closest Scrappy companion near the
 -- corpse moves the registered loot from the corpse into its saddlebag. What does not fit stays on
 -- the corpse.
 --
--- WHAT IT COLLECTS: whatever another mod registers, through one call (card #300 -- Scrappy is
+-- WHAT IT COLLECTS: whatever another mod registers, through one call (Scrappy is
 -- standalone, published on its own, and reads nobody's tables):
 --   CompanionDogsScrappy.registerLoot(name, itemTypes)   itemTypes[fullType] = any non-nil value
 -- The table is kept, not copied: an item added to it later is collected with no new call. A
@@ -28,7 +28,7 @@ local LOG_TAG = "[CompanionDogsScrappy] "
 local lootSources = {}
 local saidNothingRegistered = false
 
--- Kahlua has no global next() (pz-b42-modding §29): emptiness is asked with pairs.
+-- Kahlua has no global next(): emptiness is asked with pairs.
 local function isEmpty(t)
     for _ in pairs(t) do return false end
     return true

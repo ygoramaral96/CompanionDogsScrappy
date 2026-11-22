@@ -1,7 +1,7 @@
 -- Scrappy breed registration for Companion Dogs (add-on contract: CD.registerBreed).
 -- Identity: a mechanical dog that loots jewelry off zombies, carries more than any other breed
 -- and speeds up the owner's Electricity and MetalWelding. Those last two are NOT breed fields in
--- the base mod: they are separate systems (loot, owner XP) added in later phases of card #246.
+-- the base mod: they are separate systems (loot, owner XP) added by other files of this mod.
 -- This file only registers the breed.
 local CD = CompanionDogs
 -- Without the base mod (0.6.3+) the add-on stays inert, same gate as the official add-ons.

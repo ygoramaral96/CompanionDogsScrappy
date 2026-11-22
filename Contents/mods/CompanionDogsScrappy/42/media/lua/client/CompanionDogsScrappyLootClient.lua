@@ -1,4 +1,4 @@
--- Shows the owner which jewels Scrappy took off a corpse (card #246). The server sends the list through
+-- Shows the owner which jewels Scrappy took off a corpse. The server sends the list through
 -- CompanionDogsScrappy.toOwner (network in MP, a direct call in single player).
 require "CompanionDogsScrappyShared"
 local S = CompanionDogsScrappy
