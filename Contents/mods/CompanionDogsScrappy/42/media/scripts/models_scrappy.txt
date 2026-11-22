@@ -8,7 +8,7 @@ module Base
        CompanionDogsScrappyLightsClient swaps to ScrappyOff.png (red line) when it shuts down.
        Ruler: scripts/scrappy/checar_scrappy_neon.py
        saddlebags_l/_r stay empty on Scrappy (built-in bag); saddlebags_c carries the ammo case
-       (GENZ_ScrappyCargoBox) while the bag holds something -- offset, rotate and scale found in game
+       (ScrappyCargoBox) while the bag holds something -- offset, rotate and scale found in game
        with a debug tuner (skill pz-ajuste-ao-vivo, 13/10): upright, along the back rail. At 1.0 the
        case was cut off or vanished from some distances and angles; at 0.5 it shows. */
     model Scrappy_Body
@@ -57,10 +57,10 @@ module Base
        there is no clothing item, so this copy names the texture itself, like CompanionDogs'
        CrudeLeatherBag_Ground (which has one and shows). Mesh and scale are vanilla's; the texture is the
        vanilla case repainted in Scrappy's olive with a bone on each side (scripts/scrappy/paint_scrappy_cargo.py). */
-    model GENZ_ScrappyCargoBox
+    model ScrappyCargoBox
     {
         mesh = WorldItems/Clothing/AmmoBox_Ground,
-        texture = WorldItems/GENZ_ScrappyCargoBox,
+        texture = WorldItems/ScrappyCargoBox,
         scale = 0.125,
     }
 }

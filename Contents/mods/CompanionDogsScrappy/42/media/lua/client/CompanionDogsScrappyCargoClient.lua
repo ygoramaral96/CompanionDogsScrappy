@@ -1,5 +1,5 @@
 -- Scrappy's cargo visual, client side (card #246). Its bag is built in (CompanionDogsScrappyBagServer): empty,
--- nothing hangs on its back; with cargo inside, the vanilla ammo case (GENZ_ScrappyCargoBox) sits on the
+-- nothing hangs on its back; with cargo inside, the vanilla ammo case (ScrappyCargoBox) sits on the
 -- saddlebags_c point of Scrappy_Body (placed in models_scrappy.txt). The leather saddlebags of
 -- CompanionDogs are never drawn on Scrappy.
 -- Purely VISUAL and LOCAL, like CompanionDogsScrappyLightsClient: every client reads the bag record the server
@@ -7,7 +7,7 @@
 require "CompanionDogsScrappyShared"
 local S = CompanionDogsScrappy
 
-local CARGO_ITEM = "Base.GENZ_ScrappyCargoBox"
+local CARGO_ITEM = "Base.ScrappyCargoBox"
 local CARGO_LOCATION = "saddlebags_c"
 local LEATHER_LOCATIONS = { "saddlebags_l", "saddlebags_r" }
 local CHECK_EVERY_TICKS = 30
