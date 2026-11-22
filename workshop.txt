@@ -2,5 +2,8 @@ version=1
 title=CD: Scrappy
 description=Scrappy, a robot scrap dog for Companion Dogs (needs Companion Dogs with add-on API 3 or newer). It pulls items other mods register off zombies that die nearby, carries a built-in cargo case, gives +20% Electrical and Metal Welding XP to whoever works near it, runs on batteries and wears down.
 description=Do not remove this mod from a save with a living Scrappy. Skeleton and animations of the German Shepherd are used under the Companion Dogs add-on policy (credit: Companion Dogs and its author).
+description=
+description=[h2]License[/h2]
+description=[url=http://theindiestone.com/forums/index.php/topic/2530-mod-permissions/?p=36478][img=http://projectzomboid.com/images/MODS_03.png][/url]
 tags=Build 42
 visibility=unlisted

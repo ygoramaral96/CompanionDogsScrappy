@@ -49,4 +49,4 @@ author's add-on policy. Scrappy's model, textures and code are by Rougy.
 
 ## License
 
-Not chosen yet (see the open item in the card that created this repository).
+[![Mod permissions](http://projectzomboid.com/images/MODS_03.png)](http://theindiestone.com/forums/index.php/topic/2530-mod-permissions/?p=36478)
