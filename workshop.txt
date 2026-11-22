@@ -8,7 +8,7 @@ description=[h2]Source code[/h2]
 description=[url=https://github.com/ygoramaral96/CompanionDogsScrappy]https://github.com/ygoramaral96/CompanionDogsScrappy[/url]
 description=
 description=[h2]License[/h2]
-description=[url=https://theindiestone.com/forums/index.php/topic/2530-mod-permissions/?p=36478][img=https://projectzomboid.com/images/MODS_03.png][/url]
+description=[url=https://theindiestone.com/forums/index.php/topic/2530-mod-permissions/?p=36478][img]https://projectzomboid.com/images/MODS_03.png[/img][/url]
 description=[b]Ask for permission[/b] (The Indie Stone mod permissions badge): the code and art made for this mod are mine. The source is public so you can read it, but reusing it, changing it, re-uploading it or putting it in a modpack needs my permission first. Ask in the comments or on GitHub.
 description=[b]Companion Dogs add-on policy[/b]: the German Shepherd skeleton and animations belong to Companion Dogs and its author. Scrappy uses them as an add-on, as the Companion Dogs add-on policy allows; those parts follow that policy, not my license. Credit: Companion Dogs and its author.
 tags=Build 42
